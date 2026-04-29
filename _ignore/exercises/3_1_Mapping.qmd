@@ -1,0 +1,305 @@
+---
+title: "Exercise 3_1: Mapping"
+subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
+author: Stefan Jünger & Anne Stroppe & Dennis Abel
+format:
+  html:
+    embed-resources: true
+    code-copy: true
+execute:
+  echo: true
+editor: visual
+callout-icon: false
+callout-appearance: minimal
+---
+
+### Exercises
+
+We've finally arrived at creating our first maps! This exercise focuses on `ggplot2` as our primary tool — from a first look at the data all the way to a multi-layer customized map.
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 1
+
+Load `attributes_cologne.shp` using `sf::read_sf()`. Inspect the attribute table — which variables does the data contain? Choose **two columns** that interest you and create one choropleth map for each.
+
+What do the two maps tell you? Can you spot any spatial patterns?
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+```{r}
+#| eval: false
+# inspect the attribute table
+attributes_cologne |>
+  sf::st_drop_geometry() |>
+  dplyr::glimpse()
+```
+:::
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 2
+
+Pick the variable from Exercise 1 you find most interesting. Change and add layers:
+
+- Add the EV charging stations from `charger_cologne.shp` as a point layer on top
+- Try different (colorblind-friendly) palettes.
+- Change the **shape** of the charging station points.
+- Map point **size** to charging power (column name `powr_kw`)
+- Experiment with legend position
+- Experiment with the thme
+- Save the result as a PNG with `ggsave()`
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+- Palette options for `scale_fill_viridis_c()`: `option = "plasma"`, `"magma"`, `"viridis"`, `"cividis"`
+- Point shape: set `shape =` outside `aes()` with a number 0–25 (run `?pch` for a visual overview)
+- Size by power: `aes(size = powr_kw)` inside `geom_sf()`, then `scale_size_continuous(name = "Power (kW)")`
+- Legend position: `theme(legend.position = "bottom")` — also try `"left"`, `"top"`, or `c(0.1, 0.9)`
+:::
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 3
+
+Display two of your maps next to each other for comparison. There are several ways to do this both within the ggplot argument and by using the map objects. Try at least one!
+
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+- `facet_wrap`: pivot first with `tidyr::pivot_longer()`, then `facet_wrap(~ variable)` — note: forces a shared color scale for both panels
+- `patchwork`: `library(patchwork)` → `map1 | map2`
+- `cowplot`: `cowplot::plot_grid(map1, map2, ncol = 2, labels = c("A", "B"))`
+
+:::
+
+### Solutions
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 1
+
+```{r}
+#| eval: false
+library(sf)
+library(dplyr)
+library(ggplot2)
+getwd()
+attributes_cologne <- sf::read_sf("../../data/attributes_cologne.shp")
+
+# inspect the attribute table
+attributes_cologne |>
+  sf::st_drop_geometry() |>
+  dplyr::glimpse()
+
+# two example maps — your variable choices will differ!
+map_ecar <-
+  ggplot() +
+  geom_sf(
+    data  = attributes_cologne,
+    aes(fill = ecar),
+    color = NA
+  ) +
+  scale_fill_viridis_c(
+    option    = "plasma",
+    direction = -1,
+    name      = "E-Car Share"
+  ) +
+  theme_void() +
+  labs(title = "Electric Cars")
+
+map_greens <-
+  ggplot() +
+  geom_sf(
+    data  = attributes_cologne,
+    aes(fill = greens),
+    color = NA
+  ) +
+  scale_fill_viridis_c(
+    option    = "viridis",
+    direction = -1,
+    name      = "Vote Share"
+  ) +
+  theme_void() +
+  labs(title = "Green Party Vote Share")
+
+map_ecar
+map_greens
+```
+
+```{r}
+#| echo: false
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+attributes_cologne <- sf::read_sf("../../data/attributes_cologne.shp")
+
+map_ecar <-
+  ggplot() +
+  geom_sf(
+    data  = attributes_cologne,
+    aes(fill = ecar),
+    color = NA
+  ) +
+  scale_fill_viridis_c(
+    option    = "plasma",
+    direction = -1,
+    name      = "E-Car Share"
+  ) +
+  theme_void() +
+  labs(title = "Electric Cars")
+
+map_greens <-
+  ggplot() +
+  geom_sf(
+    data  = attributes_cologne,
+    aes(fill = greens),
+    color = NA
+  ) +
+  scale_fill_viridis_c(
+    option    = "viridis",
+    direction = -1,
+    name      = "Vote Share"
+  ) +
+  theme_void() +
+  labs(title = "Green Party Vote Share")
+
+map_ecar
+map_greens
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 2
+
+```{r}
+#| eval: false
+charger_cologne <- sf::read_sf("../../data/charger_cologne.shp")
+
+my_map <-
+  ggplot() +
+  geom_sf(
+    data  = attributes_cologne,
+    aes(fill = ecar),
+    color = NA
+  ) +
+  scale_fill_viridis_c(
+    option    = "magma",
+    direction = -1,
+    name      = "E-Car Share"
+  ) +
+  geom_sf(
+    data  = charger_cologne,
+    # map size to charging power in kW
+    aes(size = powr_kw),
+    color = "black",
+    shape = 17,    # filled triangle — try other numbers!
+    alpha = .5
+  ) +
+  scale_size_continuous(name = "Power (kW)") +
+  theme_void() +
+  theme(legend.position = "bottom") +
+  labs(
+    title   = "Electric Cars & Charging Stations in Cologne",
+    caption = "© Stadt Köln; Bundesnetzagentur"
+  )
+
+my_map
+
+ggsave("my_map.png", my_map, dpi = 300)
+```
+
+```{r}
+#| echo: false
+charger_cologne <- sf::read_sf("../../data/charger_cologne.shp")
+
+my_map <-
+  ggplot() +
+  geom_sf(
+    data  = attributes_cologne,
+    aes(fill = ecar),
+    color = NA
+  ) +
+  scale_fill_viridis_c(
+    option    = "magma",
+    direction = -1,
+    name      = "E-Car Share"
+  ) +
+  geom_sf(
+    data  = charger_cologne,
+    aes(size = powr_kw),
+    color = "black",
+    shape = 17,
+    alpha = .5
+  ) +
+  scale_size_continuous(name = "Power (kW)") +
+  theme_void() +
+  theme(legend.position = "bottom") +
+  labs(
+    title   = "Electric Cars & Charging Stations in Cologne",
+    caption = "© Stadt Köln; Bundesnetzagentur"
+  )
+
+my_map
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 3
+
+```{r}
+#| eval: false
+# --- Option 1: patchwork ---
+library(patchwork)
+
+# combine maps with | (side by side) or / (stacked)
+map_ecar | map_greens
+
+# add a shared title
+(map_ecar | map_greens) +
+  patchwork::plot_annotation(
+    title = "Electric Cars and Green Vote Share in Cologne"
+  )
+
+# --- Option 2: cowplot ---
+library(cowplot)
+
+cowplot::plot_grid(map_ecar, map_greens, ncol = 2, labels = c("A", "B"))
+
+# --- Option 3: facet_wrap ---
+library(tidyr)
+
+# pivot two variables to long format first
+cologne_long <-
+  attributes_cologne |>
+  tidyr::pivot_longer(
+    cols      = c(cdu, greens),
+    names_to  = "variable",
+    values_to = "value"
+  )
+
+# facet_wrap uses the same color scale for all panels
+ggplot() +
+  geom_sf(
+    data  = cologne_long,
+    aes(fill = value),
+    color = NA
+  ) +
+  scale_fill_viridis_c(option = "plasma", direction = -1) +
+  facet_wrap(~ variable) +
+  theme_void()
+```
+
+```{r}
+#| echo: false
+library(patchwork)
+
+(map_ecar | map_greens) +
+  patchwork::plot_annotation(
+    title = "Electric Cars and Green Vote Share in Cologne"
+  )
+```
+:::

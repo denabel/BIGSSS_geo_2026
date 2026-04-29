@@ -1,0 +1,49 @@
+---
+title: "Exercise 2: Fun with Maps"
+subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
+author: Stefan Jünger & Anne Stroppe & Dennis Abel
+format:
+  html:
+    embed-resources: true
+    code-copy: true
+execute:
+  echo: true
+editor: visual
+callout-icon: false
+callout-appearance: minimal
+---
+
+```{r}
+#| include: false
+library(emo)
+```
+
+
+### Exercises
+
+From here on, you can go and explore!
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Open Exercise
+
+Try out some of the options to improve your map from before,work with your own data or play around with interactive maps and animations.
+You can also check out some more resources and get inspired!
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Inset Maps
+
+<https://upgo.lab.mcgill.ca/2019/12/13/making-beautiful-maps/>
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Getting VERY complex with `ggplot2`
+
+<https://timogrossenbacher.ch/bivariate-maps-with-ggplot2-and-sf/>
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Creating Art
+
+<https://www.r-bloggers.com/2020/10/personal-art-map-with-r/>
+:::

@@ -1,0 +1,407 @@
+---
+title: "Exercise 7: Neighborhood Matrices and Autocorrelation"
+subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
+author: Stefan Jünger, Anne Stroppe & Dennis Abel
+format: 
+  html:
+    embed-resources: true
+    code-copy: true
+execute:
+  echo: true
+editor: visual
+callout-icon: false
+callout-appearance: minimal
+---
+
+Thus far, we have only used Queen neighborhood matrices with our data. Let's use this exercise to try out different variations. First of all, run the code below to compile the data that were also used in the lecture.
+
+```{r}
+#| eval: false
+# Load relevant packages
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(terra)
+library(tmap)
+
+# Load voting districts and results
+voting_districts <-
+  sf::st_read("./data/Stimmbezirk.shp") |> 
+  dplyr::mutate(
+    district_id = as.numeric(nummer)
+  ) |> 
+  dplyr::select(district_id, Shape_Area, geometry) 
+
+btw21_votes <-
+  glue::glue(
+    "https://www.stadt-koeln.de/wahlen/bundestagswahl/09-2021/praesentation/\\
+    Open-Data-Bundestagswahl476.csv"
+  ) |> 
+  readr::read_csv2() |>
+  dplyr::mutate(
+    district_id = as.numeric(`gebiet-nr`),
+    valid_votes = `F`,
+    cdu_share = (F1 / valid_votes) * 100,
+    spd_share = (F2 / valid_votes) * 100,
+    fdp_share = (F3 / valid_votes) * 100,
+    afd_share = (F4 / valid_votes) * 100,
+    greens_share = (F5 / valid_votes) * 100,
+    linke_share = (F6 / valid_votes) * 100,
+    .keep = "none"
+  )
+
+btw21_votes <- btw21_votes |>
+  dplyr::rowwise() |>
+  dplyr::mutate(
+    highest_vote = factor(
+      sub(
+        "_share$",
+        "",
+        names(dplyr::pick(dplyr::ends_with("_share")))[
+          order(
+            dplyr::c_across(dplyr::ends_with("_share")),
+            decreasing = TRUE
+          )[1]
+        ]
+      )
+    ),
+    second_highest_vote = factor(
+      sub(
+        "_share$",
+        "",
+        names(dplyr::pick(dplyr::ends_with("_share")))[
+          order(
+            dplyr::c_across(dplyr::ends_with("_share")),
+            decreasing = TRUE
+          )[2]
+        ]
+      )
+    )
+  ) |>
+  dplyr::ungroup()
+
+election_results <-
+  dplyr::left_join(
+    voting_districts,
+    btw21_votes,
+    by = "district_id"
+  )
+
+# Load additional raster data
+immigrants_cologne <- terra::rast("./data/immigrants_cologne.tif")
+inhabitants_cologne <- terra::rast("./data/inhabitants_cologne.tif")
+
+immigrants_cologne  <- terra::subst(immigrants_cologne,  from = -9, to = NA)
+inhabitants_cologne <- terra::subst(inhabitants_cologne, from = -9, to = NA)
+
+immigrant_share_cologne <- (immigrants_cologne / inhabitants_cologne)*100
+
+age_rast <- terra::rast("./data/census22_age_avg.tif")
+rent_rast <- terra::rast("./data/census22_rent_avg.tif")
+
+# Extract
+election_results <-
+  election_results |>
+  dplyr::mutate(
+    immigrant_share = 
+      exactextractr::exact_extract(
+        immigrant_share_cologne, election_results, 'mean', progress = FALSE
+      ),
+    inhabitants = 
+      exactextractr::exact_extract(
+        inhabitants_cologne, election_results, 'mean', progress = FALSE
+      ),
+    age_avg = 
+      exactextractr::exact_extract(
+        age_rast, election_results, 'mean', progress = FALSE
+      ),
+    rent_avg = 
+      exactextractr::exact_extract(
+        rent_rast, election_results, 'mean', progress = FALSE
+      )
+  )
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Load relevant packages
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(terra)
+library(tmap)
+
+# Load voting districts and results
+voting_districts <-
+  sf::st_read("../../data/Stimmbezirk.shp") |> 
+  dplyr::mutate(
+    district_id = as.numeric(nummer)
+  ) |> 
+  dplyr::select(district_id, Shape_Area, geometry) 
+
+btw21_votes <-
+  glue::glue(
+    "https://www.stadt-koeln.de/wahlen/bundestagswahl/09-2021/praesentation/\\
+    Open-Data-Bundestagswahl476.csv"
+  ) |> 
+  readr::read_csv2() |>
+  dplyr::mutate(
+    district_id = as.numeric(`gebiet-nr`),
+    valid_votes = `F`,
+    cdu_share = (F1 / valid_votes) * 100,
+    spd_share = (F2 / valid_votes) * 100,
+    fdp_share = (F3 / valid_votes) * 100,
+    afd_share = (F4 / valid_votes) * 100,
+    greens_share = (F5 / valid_votes) * 100,
+    linke_share = (F6 / valid_votes) * 100,
+    .keep = "none"
+  )
+
+btw21_votes <- btw21_votes |>
+  dplyr::rowwise() |>
+  dplyr::mutate(
+    highest_vote = factor(
+      sub(
+        "_share$",
+        "",
+        names(dplyr::pick(dplyr::ends_with("_share")))[
+          order(
+            dplyr::c_across(dplyr::ends_with("_share")),
+            decreasing = TRUE
+          )[1]
+        ]
+      )
+    ),
+    second_highest_vote = factor(
+      sub(
+        "_share$",
+        "",
+        names(dplyr::pick(dplyr::ends_with("_share")))[
+          order(
+            dplyr::c_across(dplyr::ends_with("_share")),
+            decreasing = TRUE
+          )[2]
+        ]
+      )
+    )
+  ) |>
+  dplyr::ungroup()
+
+election_results <-
+  dplyr::left_join(
+    voting_districts,
+    btw21_votes,
+    by = "district_id"
+  )
+
+# Load additional raster data
+immigrants_cologne <- terra::rast("../../data/immigrants_cologne.tif")
+inhabitants_cologne <- terra::rast("../../data/inhabitants_cologne.tif")
+
+immigrants_cologne  <- terra::subst(immigrants_cologne,  from = -9, to = NA)
+inhabitants_cologne <- terra::subst(inhabitants_cologne, from = -9, to = NA)
+
+immigrant_share_cologne <- (immigrants_cologne / inhabitants_cologne)*100
+
+age_rast <- terra::rast("../../data/census22_age_avg.tif")
+rent_rast <- terra::rast("../../data/census22_rent_avg.tif")
+
+# Extract
+election_results <-
+  election_results |>
+  dplyr::mutate(
+    immigrant_share = 
+      exactextractr::exact_extract(
+        immigrant_share_cologne, election_results, 'mean', progress = FALSE
+      ),
+    inhabitants = 
+      exactextractr::exact_extract(
+        inhabitants_cologne, election_results, 'mean', progress = FALSE
+      ),
+    age_avg = 
+      exactextractr::exact_extract(
+        age_rast, election_results, 'mean', progress = FALSE
+      ),
+    rent_avg = 
+      exactextractr::exact_extract(
+        rent_rast, election_results, 'mean', progress = FALSE
+      )
+  )
+```
+
+### Exercises
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 1
+
+As in the lecture, create a neighborhood (weight) matrix, but this time, do it for Queen and Rook neighborhoods. Also, apply a row normalization.
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+You could either use the `sdep` package with its function `spdep::poly2nb()` or the more modern approach of the `sfdep` package using the function `sfdep::st_contiguity()`. In both cases, you must set the option `queen = FALSE` for Rook neighborhoods.
+:::
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 2
+
+We have not used them, but you can also create distance-based weight matrices. Use the package of your choice again and create weights for a distance between 0 and 5000 meters. Use again row-normalization.
+
+You must also convert the polygon data to point coordinates for this exercise. We'd propose to use the centroids for this task:
+
+`election_results_centroids <- sf::st_centroid(election_results)`
+
+Use a map to corroborate this conversion was successful.
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+If you use `spdep`, use the function `spdep::dnearneigh()`; if you use `sfdep`, use the function `sfdep::st_dist_band()`.
+:::
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 3
+
+Now, let's see how these different spatial weights perform in an analysis. Calculate Moran's I and Geary's C for each one of the weights and report their results for the variable spd_share.
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+It is essential to know which path you have taken before -- using `spdep` and `sfdep` -- as it determines how you solve this exercise.
+:::
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 4
+
+To wrap up, plot two Moran scatterplots to visualize the relationship between the actual values and the lagged values. Plot one plot with the neighbour-based Queen or Rook weights matrix and another one with the inverse-distance based. Compare the results.
+:::
+
+### Solutions
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 1
+
+```{r}
+# spdep
+queen_neighborhood <-
+  spdep::poly2nb(
+    election_results,
+    queen = TRUE
+  )
+
+queen_W <- spdep::nb2listw(queen_neighborhood, style = "W")
+
+rook_neighborhood <-
+  spdep::poly2nb(
+    election_results,
+    queen = FALSE
+  )
+
+rook_W <- spdep::nb2listw(rook_neighborhood, style = "W")
+
+# sfdep
+election_results <-
+  election_results |> 
+  dplyr::mutate(
+    queen_neighborhood = sfdep::st_contiguity(election_results, queen = TRUE),
+    queen_W = sfdep::st_weights(queen_neighborhood),
+    rook_neighborhood = sfdep::st_contiguity(election_results, queen = FALSE),
+    rook_W = sfdep::st_weights(rook_neighborhood)
+  )
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 2
+
+```{r}
+# convert to centroids
+election_results_centroids <- sf::st_centroid(election_results)
+
+ggplot() +
+  geom_sf(data = election_results_centroids, color = "black")
+
+# spdep
+distance_neighborhood_5000 <-
+  spdep::dnearneigh(election_results_centroids, 0, 5000)
+
+distance_neighborhood_5000_W <- 
+  spdep::nb2listw(distance_neighborhood_5000, style = "W")
+
+# sfdep
+election_results_centroids <-
+  election_results_centroids |> 
+  dplyr::mutate(
+    neighbors_5000 = sfdep::st_dist_band(election_results_centroids, 0, 5000),
+    weights_5000 = sfdep::st_weights(neighbors_5000)
+  )
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 3
+
+```{r}
+spdep::moran.test(election_results$spd_share, listw = queen_W)
+spdep::moran.test(election_results$spd_share, listw = rook_W)
+spdep::moran.test(
+  election_results_centroids$spd_share, 
+  listw = distance_neighborhood_5000_W
+)
+
+spdep::geary.test(election_results$spd_share, listw = queen_W)
+spdep::geary.test(election_results$spd_share, listw = rook_W)
+spdep::geary.test(
+  election_results_centroids$spd_share, 
+  listw = distance_neighborhood_5000_W
+)
+
+# sfdep
+library(magrittr)
+
+election_results %$% 
+  sfdep::global_moran_test(spd_share, queen_neighborhood, queen_W)
+
+election_results %$% 
+  sfdep::global_moran_test(spd_share, rook_neighborhood, rook_W)
+
+election_results_centroids %$% 
+  sfdep::global_moran_test(spd_share, neighbors_5000, weights_5000)
+
+election_results %$% 
+  sfdep::global_c_test(spd_share, queen_neighborhood, queen_W)
+
+election_results %$% 
+  sfdep::global_c_test(spd_share, rook_neighborhood, rook_W)
+
+election_results_centroids %$% 
+  sfdep::global_c_test(spd_share, neighbors_5000, weights_5000)
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 4
+
+```{r}
+spdep::moran.plot(
+  x = election_results$spd_share,
+  listw = queen_W,
+  labels = election_results$district_id,
+  xlab = "SPD share (Queen W)",
+  ylab = "Spatial lag of SPD share (Queen W)"
+)
+
+spdep::moran.plot(
+  x = election_results_centroids$spd_share,
+  listw = distance_neighborhood_5000_W,
+  labels = election_results_centroids$district_id,
+  xlab = "SPD share (5km)",
+  ylab = "Spatial lag of SPD share (5km)"
+)
+```
+:::

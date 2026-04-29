@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spatial Econometrics — Model Selection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      background: #080808;
+      color: #e5e5e5;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    button:hover { filter: brightness(1.2); }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const MODELS = {
+      OLS: {
+        name: "OLS", full: "Linear Regression",
+        formula: "Y = Xβ + ε", color: "#6b7280",
+        desc: "No spatial structure needed. Standard regression applies.", tag: "Baseline"
+      },
+      SAR: {
+        name: "SAR", full: "Spatial Autoregressive Model",
+        formula: "Y = ρWY + Xβ + ε", color: "#dc2626",
+        desc: "Outcome diffuses across space. Feedback effects are endogenous by design.", tag: "Diffusion"
+      },
+      SLX: {
+        name: "SLX", full: "Spatial Lag X Model",
+        formula: "Y = Xβ + WXθ + ε", color: "#2563eb",
+        desc: "Neighbours' characteristics directly affect your outcome. No feedback loop.", tag: "Spillover"
+      },
+      SEM: {
+        name: "SEM", full: "Spatial Error Model",
+        formula: "Y = Xβ + u,   u = λWu + ε", color: "#7c3aed",
+        desc: "Spatial clustering is in unobservables. OLS is unbiased but inefficient.", tag: "Nuisance"
+      },
+      SDM: {
+        name: "SDM", full: "Spatial Durbin Model",
+        formula: "Y = ρWY + Xβ + WXθ + ε", color: "#b45309",
+        desc: "Diffusion of Y plus direct spillover of X. Nests SAR and SLX.", tag: "Diffusion + Spillover"
+      },
+      SDEM: {
+        name: "SDEM", full: "Spatial Durbin Error Model",
+        formula: "Y = Xβ + WXθ + u,   u = λWu + ε", color: "#0891b2",
+        desc: "Spillover of X with spatial noise in errors. Nests SLX and SEM.", tag: "Spillover + Nuisance"
+      },
+      SAC: {
+        name: "SAC", full: "Combined Spatial Autocorrelation",
+        formula: "Y = ρWY + Xβ + u,   u = λWu + ε", color: "#be185d",
+        desc: "Both diffusion in Y and spatial autocorrelation in errors.", tag: "Diffusion + Nuisance"
+      },
+      MANSKI: {
+        name: "Manski", full: "Manski Model",
+        formula: "Y = ρWY + WXθ + Xβ + u,   u = λWu + ε", color: "#065f46",
+        desc: "Most general model. All effects present. Difficult to identify — use with strong theory.", tag: "Full Model"
+      }
+    };
+
+    const TREE = {
+      id: "root",
+      question: "Is there spatial autocorrelation?",
+      hint: "Test with Moran's I on residuals or outcome",
+      yes: {
+        id: "meaningful",
+        question: "Is the spatial dependence theoretically meaningful?",
+        hint: "Does space matter in your theory, or is it just unobserved confounding?",
+        yes: {
+          id: "mechanism",
+          question: "What is the spatial mechanism?",
+          hint: "Think about the data generating process",
+          diffusion: {
+            id: "diffusion_error",
+            question: "Is there also spatial autocorrelation in the errors?",
+            hint: "Are there spatially correlated unobservables alongside diffusion?",
+            yes: {
+              id: "diffusion_spillover",
+              question: "Do neighbours' X also directly affect your Y?",
+              hint: "Is there a spillover channel on top of diffusion + error?",
+              yes: { model: "MANSKI" },
+              no:  { model: "SAC" }
+            },
+            no: {
+              id: "diffusion_spillover2",
+              question: "Do neighbours' X also directly affect your Y?",
+              hint: "Spillover of covariates on top of diffusion?",
+              yes: { model: "SDM" },
+              no:  { model: "SAR" }
+            }
+          },
+          spillover: {
+            id: "spillover_error",
+            question: "Is there also spatial autocorrelation in the errors?",
+            hint: "Spatially correlated unobservables alongside spillover?",
+            yes: { model: "SDEM" },
+            no:  { model: "SLX" }
+          }
+        },
+        no: {
+          id: "nuisance_only",
+          question: "Do neighbours' X also directly affect your Y?",
+          hint: "Even as nuisance, is there a spillover channel in X?",
+          yes: { model: "SDEM" },
+          no:  { model: "SEM" }
+        }
+      },
+      no: { model: "OLS" }
+    };
+
+    const mechColors = { diffusion: "#dc2626", spillover: "#2563eb" };
+
+    function ModelCard({ modelKey }) {
+      const m = MODELS[modelKey];
+      return (
+        <div style={{
+          background: "#0f0f0f", border: `2px solid ${m.color}`,
+          borderRadius: 2, padding: "24px 28px", maxWidth: 480, margin: "0 auto"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <div>
+              <span style={{ color: m.color, fontSize: 28, fontWeight: 700 }}>{m.name}</span>
+              <span style={{ color: "#6b7280", fontSize: 13, marginLeft: 10 }}>{m.full}</span>
+            </div>
+            <span style={{
+              background: m.color + "22", color: m.color, fontSize: 11,
+              padding: "3px 8px", border: `1px solid ${m.color}44`, borderRadius: 2, whiteSpace: "nowrap"
+            }}>{m.tag}</span>
+          </div>
+          <div style={{
+            background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 2,
+            padding: "12px 16px", marginBottom: 14, fontSize: 13, color: "#e5e5e5", letterSpacing: "0.02em"
+          }}>
+            {m.formula}
+          </div>
+          <p style={{ color: "#9ca3af", fontSize: 13, margin: 0, lineHeight: 1.6 }}>{m.desc}</p>
+        </div>
+      );
+    }
+
+    function Buttons({ node, nodePath, currentPath, onAnswer }) {
+      const isActive = JSON.stringify(currentPath) === JSON.stringify(nodePath);
+      const isMech   = node.id === "mechanism";
+      const chosen   = currentPath[nodePath.length];
+
+      const btnBase = {
+        borderRadius: 2, cursor: isActive ? "pointer" : "default",
+        fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, fontWeight: 600,
+        letterSpacing: "0.08em", textTransform: "uppercase", transition: "all 0.2s ease"
+      };
+
+      if (isMech) {
+        return (
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+            {["diffusion", "spillover"].map(m => (
+              <button key={m} onClick={() => isActive && onAnswer([...nodePath, m])} style={{
+                ...btnBase, minWidth: 140, padding: "10px 24px",
+                background: chosen === m ? mechColors[m] + "22" : "#1a1a1a",
+                border: `1.5px solid ${chosen === m ? mechColors[m] : "#333"}`,
+                color: chosen === m ? mechColors[m] : "#9ca3af"
+              }}>
+                {m === "diffusion" ? "⟲ Diffusion" : "→ Spillover"}
+                <div style={{ fontSize: 10, fontWeight: 400, marginTop: 4, opacity: 0.8 }}>
+                  {m === "diffusion" ? "Y → Y via W" : "X → Y via W"}
+                </div>
+              </button>
+            ))}
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          {["yes", "no"].map(ans => (
+            <button key={ans} onClick={() => isActive && onAnswer([...nodePath, ans])} style={{
+              ...btnBase, minWidth: 100, padding: "8px 28px",
+              background: chosen === ans ? (ans === "yes" ? "#16a34a22" : "#dc262622") : "#1a1a1a",
+              border: `1.5px solid ${chosen === ans ? (ans === "yes" ? "#16a34a" : "#dc2626") : "#333"}`,
+              color: chosen === ans ? (ans === "yes" ? "#16a34a" : "#dc2626") : "#9ca3af"
+            }}>
+              {ans.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    function getNodeAtPath(tree, path) {
+      let node = tree;
+      for (const step of path) { if (!node[step]) return null; node = node[step]; }
+      return node;
+    }
+
+    function getVisibleNodes(tree, path) {
+      const nodes = []; let node = tree; let cur = [];
+      for (let i = 0; i <= path.length; i++) {
+        if (node.model) break;
+        nodes.push({ node, path: [...cur] });
+        if (i < path.length) { node = node[path[i]]; cur = [...cur, path[i]]; }
+      }
+      return nodes;
+    }
+
+    function App() {
+      const [path, setPath] = useState([]);
+      const currentNode  = getNodeAtPath(TREE, path);
+      const visibleNodes = getVisibleNodes(TREE, path);
+      const finalModel   = currentNode?.model;
+
+      return (
+        <div style={{ minHeight: "100vh", background: "#080808", color: "#e5e5e5", padding: "40px 24px" }}>
+
+          {/* Header */}
+          <div style={{ maxWidth: 640, margin: "0 auto 48px", textAlign: "center" }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.2em", color: "#4b5563", textTransform: "uppercase", marginBottom: 12 }}>
+              Spatial Econometrics
+            </div>
+            <h1 style={{
+              fontSize: 28, fontWeight: 700, margin: "0 0 8px", color: "#f5f5f5",
+              letterSpacing: "-0.03em", fontFamily: "'IBM Plex Sans', sans-serif"
+            }}>
+              Model Selection Guide
+            </h1>
+            <p style={{ color: "#4b5563", fontSize: 12, lineHeight: 1.6 }}>
+              Follow the theory — not just the tests
+            </p>
+          </div>
+
+          {/* Legend */}
+          <div style={{ maxWidth: 640, margin: "0 auto 40px", display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap" }}>
+            {[
+              { color: "#dc2626", label: "Diffusion",  sub: "Y → Y (endogenous)" },
+              { color: "#2563eb", label: "Spillover",  sub: "X → Y" },
+              { color: "#7c3aed", label: "Nuisance",   sub: "Error structure" }
+            ].map(item => (
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 10, height: 10, background: item.color, borderRadius: 1 }} />
+                <span style={{ fontSize: 11, color: "#6b7280" }}>
+                  <span style={{ color: "#9ca3af" }}>{item.label}</span> — {item.sub}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Steps */}
+          <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column" }}>
+            {visibleNodes.map(({ node, path: nodePath }, idx) => {
+              const isActive  = JSON.stringify(nodePath) === JSON.stringify(path);
+              const chosen    = path[nodePath.length];
+              const isMech    = node.id === "mechanism";
+              return (
+                <div key={node.id}>
+                  {idx > 0 && (
+                    <div style={{ width: 1, height: 32, background: "#222", margin: "0 auto" }} />
+                  )}
+                  <div style={{
+                    border: `1px solid ${isActive ? "#333" : "#1a1a1a"}`,
+                    borderRadius: 2, padding: "20px 24px",
+                    background: isActive ? "#111" : "#0c0c0c",
+                    transition: "all 0.3s ease",
+                    opacity: isActive || idx < visibleNodes.length - 1 ? 1 : 1
+                  }}>
+                    <div style={{ fontSize: 10, color: "#4b5563", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>
+                      Step {idx + 1}
+                      {chosen && (
+                        <span style={{ marginLeft: 10, color: isMech ? mechColors[chosen] : chosen === "yes" ? "#16a34a" : "#dc2626" }}>
+                          → {chosen.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: 15, fontWeight: 600, lineHeight: 1.5, marginBottom: 8,
+                      color: isActive ? "#f5f5f5" : "#6b7280", fontFamily: "'IBM Plex Sans', sans-serif"
+                    }}>
+                      {node.question}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#374151", lineHeight: 1.5, marginBottom: isActive ? 20 : 0 }}>
+                      {node.hint}
+                    </div>
+                    {isActive && (
+                      <Buttons node={node} nodePath={nodePath} currentPath={path} onAnswer={setPath} />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Result */}
+            {finalModel && (
+              <>
+                <div style={{ width: 1, height: 32, background: `linear-gradient(to bottom, #222, ${MODELS[finalModel].color}44)`, margin: "0 auto" }} />
+                <div style={{ animation: "fadeIn 0.4s ease" }}>
+                  <div style={{ fontSize: 10, color: "#4b5563", letterSpacing: "0.2em", textTransform: "uppercase", textAlign: "center", marginBottom: 16 }}>
+                    ✦ Recommended Model
+                  </div>
+                  <ModelCard modelKey={finalModel} />
+                </div>
+              </>
+            )}
+
+            {/* Reset */}
+            {path.length > 0 && (
+              <div style={{ textAlign: "center", marginTop: 32 }}>
+                <button onClick={() => setPath([])} style={{
+                  background: "transparent", border: "1px solid #222", color: "#4b5563",
+                  padding: "8px 24px", borderRadius: 2, cursor: "pointer",
+                  fontFamily: "'IBM Plex Mono', monospace", fontSize: 11,
+                  letterSpacing: "0.12em", textTransform: "uppercase"
+                }}>
+                  ↺ Reset
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Model reference */}
+          <div style={{ maxWidth: 640, margin: "64px auto 0", borderTop: "1px solid #1a1a1a", paddingTop: 32 }}>
+            <div style={{ fontSize: 10, color: "#374151", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 16 }}>
+              All Models Reference
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {Object.entries(MODELS).map(([key, m]) => (
+                <div key={key} style={{
+                  border: "1px solid #1a1a1a", borderLeft: `3px solid ${m.color}`,
+                  padding: "8px 12px", borderRadius: "0 2px 2px 0"
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: m.color }}>{m.name}</div>
+                  <div style={{ fontSize: 10, color: "#374151", marginTop: 2 }}>{m.full}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

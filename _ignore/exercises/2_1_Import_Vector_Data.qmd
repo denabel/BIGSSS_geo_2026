@@ -1,0 +1,117 @@
+---
+title: "Exercise 2_1: Import Vector Data"
+subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
+author: Stefan Jünger, Anne-Kathrin Stroppe, Dennis Abel
+format: 
+  html:
+    embed-resources: true
+    code-copy: true
+execute:
+  echo: true
+editor: visual
+callout-icon: false
+callout-appearance: minimal
+---
+
+### Exercises
+
+Let's get started with some hands-on exercises and exploring some data! This exercise focuses on importing different vector data geometries from various sources and getting used to simple feature data tables.
+
+In the folder `data`, you can find the data files prepped for all the exercises which rely on preexisting data sets. However, if you like to play around with your data, feel free to do so!
+
+::: callout-note
+## 🏋 Exercise 1
+
+Load the administrative borders of Germany. For this purpose, import the shapefile `VG250_STA.shp` from the respective folder and assign it to an object named `germany`.
+
+Plot the newly created object.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+Don't forget to load the packages `sf` and set your working directory before starting this exercise.
+:::
+
+The `R` console output already gives you some information on the data you just loaded. You also see that the object `germany` appeared in your environment. Let's explore the data set a little bit closely.
+
+::: callout-note
+## 🏋 Exercise 2
+
+Explore the data and answer the following questions:
+
+-   What is the geometry type?
+-   What is the ID of the coordinate reference system?
+-   What is the name of the column containing the information on geometries?
+-   Which attributes are assigned to the geometries?
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+You can either extract the information directly from the output or problematically with functions from base `R` and the `sf` package (you may want to have a look, e.g., at the help files `?sf::st_geometry` or `sf::st_crs()`).
+:::
+
+::: callout-note
+## 🏋 Exercise 3
+
+Do you have an idea why there are 11 observations instead of only 1, even though we expected a shapefile with the polygon of Germany? Create a new object that contains only one observation filtered by the variable `GF == 4`. The data provider, the Federal Agency for Cartography and Geodesy (BKG), has named this variable, which stands for "Geofactor" (German: "Geofaktor"). Maybe you can figure out what this category means after plotting the data.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+You can apply standard `R` procedures to filter data, such as `dplry`'s `filter()` command.
+:::
+
+### Solutions
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 1
+
+```{r}
+#| eval: false
+library(sf)
+
+germany <- sf::read_sf("./data/VG250_STA.shp") 
+
+plot(germany)
+```
+
+```{r}
+#| echo: false
+library(sf)
+
+germany <- sf::read_sf("../../data/VG250_STA.shp") 
+
+plot(germany)
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 2
+
+```{r}
+sf::st_geometry(germany) # Multipolygon: Set of several Polygons. Each row is a polygon.
+
+attr(germany, "sf_column") # geometry
+
+sf::st_crs(germany) # ETRS89, ID = EPSG:25832
+
+names(germany) # Name, Area Type, Area Size, Population Size ,...
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 3
+
+```{r}
+# It seems like the shapefile contains not only Germany's land area but also coastal areas and lakes.
+# filter 
+germany_new <-
+  germany |> 
+  dplyr::filter(GF == 4)
+
+plot(germany_new)
+```
+:::

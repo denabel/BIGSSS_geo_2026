@@ -1,0 +1,209 @@
+---
+title: "Exercise 6: Using SoRa"
+subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
+author: Stefan Jünger, Anne-Kathrin Stroppe, Dennis Abel
+format: 
+  html:
+    embed-resources: true
+    code-copy: true
+execute:
+  echo: true
+editor: visual
+callout-icon: false
+callout-appearance: minimal
+editor_options: 
+  chunk_output_type: console
+---
+
+In this exercise, we will work with the SoRa API to search for some data and link them to some input datasets. It is quite open in terms which datasets you want to use and how you want to link them. Generally, we recommend to have a closer look at the cheat sheet in the `slides` folder.
+
+### Exercises
+
+::: callout-note
+## 🏋Exercise 1
+
+Go ahead and register an PI key for the SoRa Geolinking API at https://sora.gesis.org/public/sora-user-mod/users/request-api-key
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡Tip
+
+Make sure to save this token somewhere safe.
+:::
+
+::: callout-note
+## 🏋Exercise 2
+
+Have a look at the IOER Monitor at https://monitor.ioer.de/ and search for some attributes you might find interesting.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡Tip
+
+There's a small British flag in the upper right corner to set the language to English.
+:::
+
+::: callout-note
+Have you found something nice? Now let's switch to the SoRa interfaces.
+
+## 🏋️ Exercise 3
+
+Corroborate of the attribute you find interesting can also be found in the SoRa datapicker.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡Tip
+
+You can either use the online datapicker https://sora.gesis.org/public/datapicker/ or navigate the datapicker in `R`. You may want to have a look at the corresponding help file `?sora::sora_datapicker` or the cheat sheet.
+:::
+
+## 🏋Exercise 4
+
+We are getting closer, it is time to test the connection to the API.
+
+1.  Register your API key in `R`
+2.  Test the connection :::
+
+::: {.callout-caution collapse="true"}
+## 💡Tip
+
+There are several methods you can use to register your API key. To do it just for this session, you may want to store it in a text file and set the environment variable in `R` with `Sys.setenv(SORA_API_KEY = readLines(<sora_key>))`.
+:::
+
+## 🏋Exercise 5
+
+Load the synthetic geocoordinates in the `data` folder and define them as a custom dataset for `sora`. If you have your own coordinates, you can also use them. :::
+
+::: {.callout-caution collapse="true"}
+## 💡Tip
+
+Custom datasets in `sora` can be defined using `sora::sora_custom()`
+:::
+
+## 🏋Exercise 6
+
+From now on, experiment freely with different linking endeavors. You can request data with a selection area comprising circles, squares or whatever you want. :::
+
+::: {.callout-caution collapse="true"}
+## 💡Tip
+
+There are several methods you can use to register your API key. To do it just for this session, you may want to store it in a text file and set the environment variable in `R` with `Sys.setenv(SORA_API_KEY = readLines(<sora_key>))`.
+:::
+
+### Solutions
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 1
+
+Well, I just clicked on the link of the website.
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 2
+
+Well, I just clicked on the link of the website again.
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 3
+
+Well, I just clicked on the link of the website again. Just kidding, if you want to see the geospatial datasets in the SoRa datapicker in `R` use this code:
+
+```{r}
+sora::sora_datapicker("spatial")
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 4
+
+```{r}
+#| eval: false
+# register the API key
+Sys.setenv(SORA_API_KEY = readLines("sora_key"))
+
+# test the connection
+sora::sora_available()
+```
+
+```{r}
+#| echo: false
+# register the API key
+Sys.setenv(SORA_API_KEY = readLines("../../sora_key"))
+
+# test the connection
+sora::sora_available()
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 5
+
+```{r}
+#| eval: false
+synthetic_survey_geocoordinates <-
+  readRDS("./data/synthetic_survey_geocoordinates.rds") |> 
+  sora::sora_custom()
+
+synthetic_survey_geocoordinates
+```
+
+```{r}
+#| echo: false
+synthetic_survey_geocoordinates <-
+  readRDS("../../data/synthetic_survey_geocoordinates.rds") |> 
+  sora::sora_custom()
+
+synthetic_survey_geocoordinates
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 6
+
+```{r}
+# circles
+sora_circles <-
+  sora::sora_request(
+    dataset = synthetic_survey_geocoordinates,
+    link_to = "ioer-monitor-r01rg-2021-1000m",
+    method = "aggregate_attribute",
+    selection_area = "circle",
+    radius = 10000,
+    output = "mean",
+    wait = TRUE
+  )
+
+sora_circles
+
+# squares
+sora_squares <-
+  sora::sora_request(
+    dataset = synthetic_survey_geocoordinates,
+    link_to = "ioer-monitor-r01rg-2021-1000m",
+    method = "aggregate_attribute",
+    selection_area = "square",
+    length = 10000,
+    output = "mean",
+    wait = TRUE
+  )
+
+sora_squares
+
+# isochrones
+sora_isochrones <-
+  sora::sora_request(
+    dataset = synthetic_survey_geocoordinates,
+    link_to = "ioer-monitor-r01rg-2021-1000m",
+    method = "aggregate_attribute",
+    selection_area = "isochrone",
+    transport_mode = "foot-walking",
+    routing_type = "time",
+    interval = 10,
+    output = "mean",
+    wait = TRUE
+  )
+
+sora_isochrones
+```
+:::

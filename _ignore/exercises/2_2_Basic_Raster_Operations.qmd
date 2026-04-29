@@ -1,0 +1,184 @@
+---
+title: "Exercise 2_2: Basic Raster Operations"
+subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
+author: Stefan Jünger, Anne-Kathrin Stroppe, Dennis Abel
+format: 
+  html:
+    embed-resources: true
+    code-copy: true
+execute:
+  echo: true
+editor: visual
+callout-icon: false
+callout-appearance: minimal
+---
+
+### Exercises
+
+::: callout-note
+## 🏋️ Exercise 1
+
+Create a matrix with 8 rows and 8 columns filled with random numbers between 1 and 1000.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+You can create the numbers using the `sample()` function.
+:::
+
+::: callout-note
+## 🏋 Exercise 2
+
+Now, use this matrix to create a raster layer and plot it.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+The `terra::rast()` function can be fed with matrices to create a raster layer.
+:::
+
+The `terra::rast()` function can not only be used to create raster data on the fly, but it is also quite dull. Instead, we can use it to import already prepared data.
+
+::: callout-note
+## 🏋 Exercise 3
+
+Import one of the raster `.tif` files in the `data` folder of the workshop directory. Have a look at it!
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+Make sure your file paths are set correctly. You can check them with `getwd()`. Setting is done with `setwd()`.
+:::
+
+::: callout-note
+## 🏋️ Exercise 4
+
+Import the raster data on inhabitants and citizens in Cologne. Create a new layer showing the proportion of immigrants (!) in each grid cell between 0 and 1.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+You can handle raster layers as any simple data table using `+`, `-`, or `/` operators, e.g., to create a new layer that you might need. But make sure to define all missing values first.
+:::
+
+### Solutions
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 1
+
+```{r}
+fancy_matrix <-
+  sample(1:1000, 8*8, replace = TRUE) |> 
+  matrix(nrow = 8, ncol = 8)
+
+fancy_matrix
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 2
+
+```{r}
+library(terra)
+
+fancy_raster_layer <- terra::rast(fancy_matrix)
+
+terra::plot(fancy_raster_layer)
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 3
+
+```{r}
+#| eval: false
+# Census 2022 on the number of families
+families <- terra::rast("./data/census22_families.tif")
+
+# inspect metadata
+families
+
+# plot the data
+terra::plot(families)
+```
+
+```{r}
+#| echo: false
+families <- terra::rast("../../data/census22_families.tif")
+
+# inspect metadata
+families
+
+# plot the data
+terra::plot(families)
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 4
+
+```{r}
+#| eval: false
+# load all layers
+citizens_cologne <- terra::rast("./data/citizens_cologne.tif")
+inhabitants_cologne <- terra::rast("./data/inhabitants_cologne.tif")
+
+# define missing values
+citizens_cologne[citizens_cologne == -9] <- NA
+inhabitants_cologne[inhabitants_cologne == -9] <- NA
+
+# create immigrants layer
+immigrants_cologne <- inhabitants_cologne - citizens_cologne
+
+# inspect data
+immigrants_cologne
+
+# something's off - let's get rid of the wierd negative numbers
+immigrants_cologne[immigrants_cologne < 0] <- NA
+
+# create proportation layer
+immigrants_proportion <- immigrants_cologne / inhabitants_cologne
+
+# set a proper name for our created layer
+names(immigrants_proportion) <- "immigrants_proportion"
+
+# plot it
+terra::plot(immigrants_proportion)
+```
+
+```{r}
+#| echo: false
+# load all layers
+citizens_cologne <- terra::rast("../../data/citizens_cologne.tif")
+inhabitants_cologne <- terra::rast("../../data/inhabitants_cologne.tif")
+
+# define missing values
+citizens_cologne[citizens_cologne == -9] <- NA
+inhabitants_cologne[inhabitants_cologne == -9] <- NA
+
+# create immigrants layer
+immigrants_cologne <- inhabitants_cologne - citizens_cologne
+
+# inspect data
+immigrants_cologne
+
+# something's off - let's get rid of the wierd negative numbers
+immigrants_cologne[immigrants_cologne < 0] <- NA
+
+# create proportation layer
+immigrants_proportion <- immigrants_cologne / inhabitants_cologne
+
+# set a proper name for our created layer
+names(immigrants_proportion) <- "immigrants_proportion"
+
+# note the nicer name of the attribute
+immigrants_proportion
+
+# plot it
+terra::plot(immigrants_proportion)
+```
+:::
