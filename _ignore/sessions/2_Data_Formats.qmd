@@ -1,8 +1,8 @@
 ---
 title: "Data Formats"
-subtitle: "GESIS Workshop: Introduction to Geospatial Techniques for Social Scientists in R"
-author: "Stefan Jünger, Anne-Kathrin Stroppe, Dennis Abel"
-date: April 23, 2026
+subtitle: "Geodata & Spatial Regression"
+author: "Anne-Kathrin Stroppe, Dennis Abel"
+date: June 11, 2026
 execute:
   echo: true
 format:
@@ -47,7 +47,7 @@ course_content |>
 
 ::::: columns
 ::: {.column width="50%"}
-![](../img/learning_stuff_meme.jpg)
+![](../img/data_formats.jpg)
 :::
 
 ::: {.column width="50%"}
@@ -130,17 +130,24 @@ We must assign attributes to each geometry to hold additional information $\righ
 -   ...
 -   Sometimes, vector data come even in a text format, such as `CSV`
 
-## Welcome to the proprietary reality: shapefiles
+## The proprietary reality: shapefiles
 
-Both the geometric information and attribute table could be saved within one file. Rather often, *ESRI Shapefiles* are used to store vector data. Shapefiles consist of at least three mandatory files with the following extensions:
+::::: columns
+::: {.column width="70%"}
+Both the geometric information and attribute table could be saved within one file, often as *ESRI Shapefiles*. Shapefiles consist of at least three mandatory files with the following extensions:
 
 -   `.shp`: shape format
 -   `.shx`: shape index format
 -   `.dbf`: attribute format
 -   (`.prj`: CRS/Projection)
 
-You don't have to remember what they stand for, but you can only properly work with the data if none of those files is missing.
+You don't have to remember what they stand for, but you need all of those files.
+::: 
 
+::: {.column width="30%"}
+![](../img/shapefile_attached.png){fig-align="center"}
+::: 
+:::::
 ## Welcome to `simple features`
 
 ::::: columns

@@ -1,7 +1,7 @@
----
+﻿---
 title: "Exercise 2_2: Basic Raster Operations"
-subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
-author: Stefan Jünger, Anne-Kathrin Stroppe, Dennis Abel
+subtitle: 'Geodata & Spatial Regression'
+author: Anne-Kathrin Stroppe, Dennis Abel
 format: 
   html:
     embed-resources: true

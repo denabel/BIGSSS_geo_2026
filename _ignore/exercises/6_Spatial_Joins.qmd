@@ -1,7 +1,7 @@
----
+﻿---
 title: "Exercise 6: Spatial Joins"
-subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
-author: Stefan Jünger & Dennis Abel
+subtitle: 'Geodata & Spatial Regression'
+author: Anne-Kathrin Stroppe & Dennis Abel
 format: 
   html:
     embed-resources: true
@@ -18,7 +18,168 @@ editor_options:
 ### Exercises
 
 ::: callout-note
-## `r emo::ji("weight_lifting_man")` Exercise 1
+## `r emo::ji("weight_lifting_man")` Exercise 0: Geocoding
+
+Load the file `hospitals_cologne_exercise.csv` from the `./data` folder. It contains names and addresses of 12 Cologne hospitals from the official Destatis hospital directory.
+
+1. Inspect the data — which column contains the full address string?
+2. Geocode all 12 hospitals using `tidygeocoder::geocode()` with `method = "osm"`. How many were matched successfully?
+3. Convert the result to an `sf` point layer (CRS 4326), then transform to CRS 3035.
+4. Map the geocoded hospitals on top of the Cologne district outline (`VG250_KRS.shp`, filter to `GEN == "Köln"`).
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+Use `sf::st_as_sf(coords = c("long", "lat"), crs = 4326)` to convert — note the order: longitude first, then latitude. Check for `NA` coordinates before converting with `dplyr::filter(!is.na(long))`.
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution
+
+```{r}
+library(tidygeocoder); library(sf); library(dplyr); library(tmap)
+
+# Load address data
+hospitals <- readr::read_csv("../../data/hospitals_cologne_exercise.csv",
+                              show_col_types = FALSE)
+hospitals
+
+# Geocode
+hospitals_geocoded <- hospitals |>
+  tidygeocoder::geocode(address = address, method = "osm")
+
+cat("Matched:", sum(!is.na(hospitals_geocoded$lat)), "/", nrow(hospitals_geocoded), "\n")
+
+# Convert to sf
+hospitals_sf <- hospitals_geocoded |>
+  dplyr::filter(!is.na(long)) |>
+  sf::st_as_sf(coords = c("long", "lat"), crs = 4326) |>
+  sf::st_transform(3035)
+
+# Map
+cologne <- sf::read_sf("../../data/VG250_KRS.shp") |>
+  dplyr::filter(GEN == "Köln") |>
+  sf::st_transform(3035)
+
+tm_shape(cologne) +
+  tm_polygons(col = "lightgrey") +
+  tm_shape(hospitals_sf) +
+  tm_dots(col = "steelblue", size = 0.3) +
+  tm_text("name", size = 0.4, ymod = 0.5)
+```
+:::
+
+---
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 1: Distance & Nearest Neighbour
+
+Using the Cologne voting precincts (`Stimmbezirk.shp`) and a point dataset of your choice, compute the distance from each precinct centroid to the nearest point feature. Map the result.
+
+**Choose your point dataset — pick whichever fits your interests:**
+
+::: {.panel-tabset}
+
+### 🏥 Option A: Hospitals (from Exercise 0)
+
+Use the hospitals you already geocoded. This continues naturally from Exercise 0.
+
+```{r}
+#| eval: false
+# Use the hospitals_sf object from Exercise 0
+hospitals_sf_3035 <- sf::st_transform(hospitals_sf, 3035)
+```
+
+### 🚉 Option B: NRW train stops (pre-loaded)
+
+Use the train stop data already in the `./data` folder. Note: CRS is missing — set it manually.
+
+```{r}
+#| eval: false
+train_stops <- sf::read_sf("./data/nrw_pt_osmtrainstops.shp") |>
+  sf::st_set_crs(25832) |>
+  sf::st_transform(3035)   # coordinates already in LAEA Europe
+```
+
+### 🗺️ Option C: Your own OSM feature
+
+Query any feature from OpenStreetMap using the `osmdata` package (as in Session 4). Examples: pharmacies, schools, supermarkets, parks, bus stops.
+
+```{r}
+#| eval: false
+library(osmdata)
+
+your_features <- osmdata::getbb("Köln") |>
+  osmdata::opq(timeout = 25) |>
+  osmdata::add_osm_feature(
+    key   = "amenity",       # change key/value to your feature of interest
+    value = "pharmacy"       # e.g. "school", "supermarket", "post_office"
+  ) |>
+  osmdata::osmdata_sf() |>
+  _$osm_points |>
+  sf::st_transform(3035)
+```
+
+:::
+
+**Steps for all options:**
+
+1. Load `Stimmbezirk.shp`, set CRS to 3035, compute centroids with `sf::st_centroid()`
+2. Find the nearest feature for each centroid using `sf::st_nearest_feature()`
+3. Compute distances with `sf::st_distance(..., by_element = TRUE)`
+4. Map the result — which precincts have the worst access?
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
+Remember: `st_nearest_feature()` returns an *index*, not a distance. Use that index to subset your point layer before calling `st_distance(..., by_element = TRUE)`. Convert the result to numeric metres with `as.numeric()`.
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution (Option A: hospitals)
+
+```{r}
+library(sf); library(dplyr); library(tmap)
+
+# Voting precincts
+stimmbezirke <- sf::read_sf("../../data/Stimmbezirk.shp") |>
+  sf::st_set_crs(25832) |>
+  sf::st_transform(3035)
+
+stimmbezirk_centroids <- sf::st_centroid(stimmbezirke)
+
+# Point layer (hospitals from Exercise 0 — already in environment)
+hospitals_sf_3035 <- sf::st_transform(hospitals_sf, 3035)
+
+# Nearest feature index
+nearest_idx <- sf::st_nearest_feature(stimmbezirk_centroids, hospitals_sf_3035)
+
+# Distance to nearest hospital
+stimmbezirke$dist_hospital_m <- as.numeric(
+  sf::st_distance(
+    stimmbezirk_centroids,
+    hospitals_sf_3035[nearest_idx, ],
+    by_element = TRUE
+  )
+)
+
+# Map
+tm_shape(stimmbezirke) +
+  tm_polygons(
+    fill = "dist_hospital_m",
+    fill.legend = tm_legend(title = "Distance to nearest\nhospital (m)"),
+    fill.scale  = tm_scale_intervals(style = "quantile", n = 5, values = "viridis"),
+    col = NA
+  )
+```
+:::
+
+---
+
+::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 2
 
 We may not always rely on georeferenced data collected in the whole area of a country. Thus, when exploiting geospatial data for linking, one exercise is to subset the data. This could be a subset of the charging station data used in the lecture. Let's say we conducted a survey in the German federal state North-Rhine Westphalia (NRW).
 
@@ -38,7 +199,7 @@ You can explore two functions: `sf::st_join` and `sf::st_intersection()`. The de
 :::
 
 ::: callout-note
-## `r emo::ji("weight_lifting_man")` Exercise 2
+## `r emo::ji("weight_lifting_man")` Exercise 3
 
 Did the operationalization of charger accessibility convince you? There may be other ways, such as the proportion of residents with max. 1000 m linear distance to the nearest charger.
 

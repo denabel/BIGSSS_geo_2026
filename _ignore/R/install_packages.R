@@ -1,10 +1,9 @@
 # =============================================================================
 # install_packages.R
 # 
-# Content:  Package Installation for Introduction to Geospatial Techniques for 
-#           Social Scientists in R  2026
+# Content:  Package Installation for Geodata & Spatial Regression 2026 (BIGSS)
 # 
-# Version:  Apr 20 2026
+# Version:  June 08 2026
 # =============================================================================
 
 # --- Task ---------------------------------------------------------------------
@@ -44,9 +43,11 @@ easypackages::packages(
   "ggspatial",      # Spatial layers for ggplot2 (scale bar, north arrow)
   "tidyterra",      # tidyverse integration for terra
   "osmdata",        # Download OpenStreetMap data
+  "osrm",           # Routing
   "OpenStreetMap",  # Render OSM tiles as background maps
   "tidygeocoder",   # Geocoding via public APIs
-  "exactextractr"   # Fast raster extraction for polygons
+  "exactextractr",  # Fast raster extraction for polygons
+  "areal"           # Areal interpolation
 )
 
 # Spatial statistics
@@ -82,7 +83,11 @@ easypackages::packages(
 )
 
 
-
+# German Census data
+easypackages::packages(
+  "z22", 
+  "ffm"
+)
 
 # --- Non-CRAN Packages --------------------------------------------------------
 # These packages are hosted on GitHub or GESIS GitLab.
@@ -92,10 +97,7 @@ if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")
 
 pak::pkg_install(c(
   "StefanJuenger/bkggeocoder",                          # Offline geocoding (BKG), developed at GESIS
-  "StefanJuenger/z11",                                  # German Census 2011 grid data
-  "jslth/z22",                                          # German Census 2022 grid data
-  "jslth/ffm",                                          # BKG administrative boundaries archive
-  "git::https://git.gesis.org/sora-service/sora.git"    # GESIS survey data access 
+  "StefanJuenger/z11"                                  # German Census 2011 grid data
 ))
 
 

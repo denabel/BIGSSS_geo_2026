@@ -1,8 +1,8 @@
----
+﻿---
 title: "Spatial Analysis"
-subtitle: "GESIS Workshop: Introduction to Geospatial Techniques for Social Scientists in R"
-author: "Stefan Jünger, Anne Stroppe & Dennis Abel"
-date: April 24, 2026
+subtitle: "Geodata & Spatial Regression"
+author: "Anne Stroppe & Dennis Abel"
+date: June 12, 2026
 execute:
   echo: true
 format:

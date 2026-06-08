@@ -1,8 +1,8 @@
 ---
-title: "Applied Spatial Linking"
-subtitle: "GESIS Workshop: Introduction to Geospatial Techniques for Social Scientists in R"
-author: "Stefan Jünger & Dennis Abel"
-date: April 10, 2025
+title: "Geocoding, Proximity Measures & Spatial Alignment"
+subtitle: "Geodata & Spatial Regression"
+author: "Anne-Kathrin Stroppe & Dennis Abel"
+date: June 12, 2026
 execute:
   echo: true
   # cache: true
@@ -14,20 +14,25 @@ format:
     scrollable: true
     slide-number: false
     logo: ../img/GESIS-Logo_2024.svg.png
-editor_options: 
+editor_options:
   chunk_output_type: console
 knitr:
-  opts_chunk: 
+  opts_chunk:
     R.options:
       width: 120
-  opts_knit: 
-    root.dir: ../../
 ---
 
 ```{r}
 #| echo: false
 #| include: false
+library(sf)
+library(dplyr)
 library(tmap)
+library(tidygeocoder)
+library(readr)
+library(smoothr)
+library(units)
+library(maptiles)
 ```
 
 
@@ -35,129 +40,28 @@ library(tmap)
 
 ```{r}
 #| echo: false
-source("./_ignore/sessions/course_content.R") 
+source("./course_content.R")
 
-course_content |> 
-  kableExtra::row_spec(10, background = "yellow") |> 
+course_content |>
+  kableExtra::row_spec(10, background = "yellow") |>
   kableExtra::kable_styling(font_size = 20)
 ```
 
-## What are georeferenced data?
 
-Data with a direct spatial reference $\rightarrow$ **geo-coordinates**
+## What is Spatial Data Linking?
 
-- Information about geometries
-- Optional: Content in relation to the geometries
+Sometimes datasets don't have a geocodes, do not include the indicators you need or share congruent borders that make them easy to join
 
-![](../img/fig_geometries.png){.r-stretch fig-align="center"}
+**We add to our toolbox:**
 
-<small>Sources: OpenStreetMap / GEOFABRIK (2018), City of Cologne (2014), and the Statistical Offices of the Federation and the Länder (2016) / Jünger, 2019</small>
-
-
----
-
-
-## Georeferenced survey data
-
-Survey data enriched with geo-coordinates (or other direct spatial references).
-
-![](../img/geo_surveys.png){.r-stretch fig-align="center"}
-
-**With georeferenced survey data, we can analyze interactions between individual behaviors and attitudes and the environment.**
-
-## An example workflow
-
-:::: columns
-::: {.column width="50%"}
-From the addresses to analyses with georeferenced survey data, several steps and challenges along the way. We will talk about:
-
-- Data Protection & Data Access
-- Geocoding 
-- Spatial Data Linking
-- An example workflow using the `sora` package
+::: {.incremental}
+- 🗺️ **Geocoding** — addresses → coordinates
+- 📏 **Distance & Proximity** — how far? nearest what?
+- 🚗 **Travel Time** — real-world accessibility
+- 🔀 **Areal Interpolation** — transferring data across incongruent units
 :::
 
-::: {.column width="50%"}
-![](../img/varreport.png){fig-align="center" width="50%"}
-:::
-::::
-
-
-## Data protection
-
-That‘s one of the biggest issues.
-
-- Explicit spatial references increase the risk of re-identifying anonymized survey respondents
-- Can occur during the processing of data but also during the analysis
-
-
-**Affects all phases of research and data management!**
-
-## Data availability
-
-:::: columns
-::: {.column width="50%"}
-Geospatial Data
-
-- Often de-centralized distributed 
-- Fragmented data landscape, at least in Germany
-
-Georeferenced Survey Data
-
-- Primarily, survey data
-- Depends on documentation
-- Access difficult due to data protection restrictions
-:::
-
-::: {.column width="50%"}
-![](../img/data_availability.png){fig-align="center" width="50%"}
-
-<small>
-https://www.eea.europa.eu/data-and-maps
-https://datasearch.gesis.org/
-https://datasetsearch.research.google.com/
-</small>
-:::
-::::
-
-## Distribution & re-identification risk
-
-Even without (in)direct spatial references, data may still be sensitive.
-
-- Geospatial attributes add new information to existing data
-- Maybe part of general data privacy checks, but we may not distribute these data as is
-
-:::: columns
-::: {.column width="50%"}
-Safe Rooms / Secure Data Centers
-
-- Control access
-- Checks output
-:::
-
-::: {.column width="50%"}
-![](../img/safe_room.png){fig-align="center" width="50%"}
-<small>https://www.gesis.org/en/services/processing-and-analyzing-data/guest-research-stays/secure-data-center-sdc</small>
-:::
-::::
-
-## Legal Regulations in Data Processing
-
-:::: columns
-::: {.column width="50%"}
-In Germany, storing personal information such as addresses in the same place as actual survey attributes is usually not allowed.
-
-- Projects keep them in separate locations
-- Can only be matched with a correspondence table
-- Necessary to conduct data linking
-:::
-
-::: {.column width="50%"}
-![](../img/fig_linking_workflow_simple.png){fig-align="center" width="50%"}
-
-<small>Jünger, 2019</small>
-:::
-::::
+## Geocoding {.center style="text-align: center;"}
 
 ## Geocoding
 
@@ -169,13 +73,126 @@ However, conducting this procedure is tricky (not only in `R`). Many services ar
 - Probably not data protection-friendly (Hey Google)
 - Or both
 
-## Our Approach
 
-We rely on a service offered by the Federal Agency of Cartography and Geodesy (BKG):
+## Georeferenced survey data
 
-- Online interface and API for online geocoding
-- Offline geocoding possible based on raw data
-- But: Data and service used to be restricted
+One example: Survey data enriched with geo-coordinates (or other direct spatial references).
+
+![](../img/geo_surveys.png){.r-stretch fig-align="center"}
+
+**With georeferenced survey data, we can analyze interactions between individual behaviors and attitudes and the environment.**
+
+## Issue Data Protection
+
+:::: columns
+::: {.column width="50%"}
+Explicit spatial references increase the risk of re-identifying anonymized survey respondents: In Germany, storing personal information such as addresses in the same place as actual survey attributes is usually not allowed.
+
+- Projects keep them in separate locations
+- Can only be matched with a correspondence table
+- Necessary to conduct data linking
+- Access often only via Safe Rooms/Secure Data Centers
+:::
+
+::: {.column width="50%"}
+![](../img/fig_linking_workflow_simple.png){fig-align="center" width="50%"}
+
+<small>Jünger, 2019</small>
+:::
+::::
+
+
+## Our example today: Hospitals (Destatis)
+
+The German Federal Statistical Office ([Destatis](https://www.destatis.de)) publishes an annual **hospital directory** with names and full addresses of all ~1,900 hospitals in Germany that are freely downloadable.
+
+We work with **12 Cologne hospitals**:
+
+```{r}
+#| output-location: fragment
+hospitals_cologne <- readr::read_csv("../../data/hospitals_cologne_exercise.csv",
+                                      show_col_types = FALSE)
+
+hospitals_cologne |>
+  dplyr::select(name, strasse, hausnr, plz, ort)
+```
+
+## Geocoding with `tidygeocoder`
+
+[`tidygeocoder`](https://jessecambon.github.io/tidygeocoder/) provides a tidy interface to many geocoding services. No API key needed when using **OpenStreetMap/Nominatim** (`method = "osm"`).
+
+```{r}
+#| eval: false
+hospitals_geocoded <- hospitals_cologne |>
+  tidygeocoder::geocode(
+    address = address,   # "Brückenstr. 45 50996 Köln Germany"
+    method  = "osm"
+  )
+```
+
+::: {.fragment}
+```{r}
+#| eval: false
+# Convert to sf point layer
+hospitals_sf <- hospitals_geocoded |>
+  dplyr::filter(!is.na(long)) |>
+  sf::st_as_sf(coords = c("long", "lat"), crs = 4326) |>
+  sf::st_transform(3035)
+```
+:::
+
+::: {.fragment}
+```{r}
+#| echo: false
+# Load pre-geocoded result
+if (file.exists("../../data/hospitals_nrw_geocoded.rds")) {
+  hospitals_sf <- readRDS("../../data/hospitals_nrw_geocoded.rds") |>
+    dplyr::filter(grepl("K.ln", ort, ignore.case = TRUE))
+} else {
+  hospitals_sf <- NULL
+}
+```
+:::
+
+
+## Geocoding result
+
+```{r}
+#| fig.asp: 1
+#| output-location: column-fragment
+cologne_outline <- sf::read_sf("../../data/VG250_KRS.shp") |>
+  dplyr::filter(GEN == "Köln") |>
+  sf::st_transform(3035)
+
+tm_shape(cologne_outline) +
+  tm_polygons(col = "lightgrey") +
+  tm_shape(hospitals_sf) +
+  tm_dots(col = "steelblue", size = 0.4) +
+  tm_text("name", size = 0.8, ymod = 0.4) +
+  tm_title("12 Cologne hospitals — geocoded")
+```
+
+
+## Common geocoding pitfalls
+
+- **Duplicates**: Several locations of one insitute 
+- **Ambiguous place names**: "Köln" vs "Cologne" vs "Köln, Germany" 
+- **Missing (string) matches**: some addresses fail, additional information in adress fields that do not belong there ... it's basically a record linkage problem.
+- **Rate limits**: free APIs (Nominatim) limit requests 
+
+A lot of "ready to use" tools but need to check for data quality and computational power.
+
+```{r}
+#| eval: false
+# Check how many geocoded successfully
+hospitals_geocoded |>
+  dplyr::summarise(
+    total = n(),
+    matched = sum(!is.na(lat)),
+    match_rate = mean(!is.na(lat))
+  )
+```
+
 
 ## `bkggeocoder`
 
@@ -196,670 +213,688 @@ We rely on a service offered by the Federal Agency of Cartography and Geodesy (B
 
 We can now also use the `sora` package to geocode addresses (but thus far, with fewer features than `bkggeocoder`).
 
-```{r}
-#| output-location: fragment
-leibniz_addresses <-
-  tibble::tribble(
-    ~id, ~street, ~house_number, ~zip_code, ~place, ~institute,
-    1, "B 2", "1", "68159", "Mannheim", "GESIS",
-    2, "Unter Sachsenhausen", "6-8",  "50667", "Köln", "GESIS",
-    3, "Kellnerweg", "4", "37077", "Göttingen", "DPZ",
-    4, "Reichsstr.", "4-6", "04109",  "Leipzig", "GWZO",
-    5, "Schöneckstraße", "6", "79104", "Freiburg", "KIS",
-    6, "Albert-Einstein-Straße", "29a", "18059", "Rostock", "LIKAT",
-    7, "L7", "1", "68161", "Mannheim", "ZEW",
-    8, "Müggelseedamm", "310", "12587", "Berlin", "IGB",
-    9, "Campus D2", "2", "66123", "Saarbrücken", "INM",
-    10, "Eberswalder Straße", "84", "15374", "Müncheberg (Mark)", "ZALF"
-  )
+- Designed specifically for data-protection-compliant geocoding of **survey respondent addresses**
+- Keeps addresses and survey data separate
+- Integrates geocoding + spatial linking in one workflow
 
-leibniz_addresses
-```
+... and it can do even more! (see backup files)
 
-## Setup and run the Geocoding
+## Why geocoding?
 
-```{r}
-#| output-location: fragment
-# load sora package
-library(sora)
-
-# set API key for the session
-Sys.setenv(SORA_API_KEY = readLines("sora_key"))
-
-# check if the sora API can be reached
-sora_available()
-```
-
-## Setup and run the Geocoding
-
-```{r}
-#| eval: false
-# load sora package
-library(sora)
-
-# set API key for the session
-Sys.setenv(SORA_API_KEY = readLines("sora_key"))
-
-# check if the sora API can be reached
-sora_available()
-
-# start the geocoding
-leibniz_addresses <-
-  sora::sora_geocoder(
-    leibniz_addresses
-  )
-```
-
-::: {.fragment}
-```{r}
-#| echo: false
-leibniz_addresses <-
-  sora::sora_geocoder(
-    leibniz_addresses
-  )
-```
-:::
-
-## Setup and run the Geocoding
-
-```{r}
-#| eval: false
-# load sora package
-library(sora)
-
-# set API key for the session
-Sys.setenv(SORA_API_KEY = readLines("sora_key"))
-
-# check if the sora API can be reached
-sora_available()
-
-# start the geocoding
-leibniz_addresses <-
-  sora::sora_geocoder(
-    leibniz_addresses
-  )
-
-# check status
-sora::sora_job_status(leibniz_addresses)
-```
-
-::: {.fragment}
-```{r}
-#| echo: false
-sora::sora_job_status(leibniz_addresses)
-```
-:::
-
-## Setup and run the Geocoding
-
-```{r}
-#| eval: false
-# load sora package
-library(sora)
-
-# set API key for the session
-Sys.setenv(SORA_API_KEY = readLines("sora_key"))
-
-# check if the sora API can be reached
-sora_available()
-
-# start the geocoding
-leibniz_addresses <-
-  sora::sora_geocoder(
-    leibniz_addresses
-  )
-
-# check status
-sora::sora_job_status(leibniz_addresses)
-```
-
-::: {.fragment}
-```{r}
-#| echo: false
-while(isFALSE(sora::sora_job_done(leibniz_addresses))) {
-  print("Waiting for SoRa API to be finished...")
-  Sys.sleep(10)
-}
-
-sora::sora_job_status(leibniz_addresses)
-```
-:::
-
-## Setup and run the Geocoding
-
-```{r}
-#| eval: false
-#| output-location: fragment
-# load sora package
-library(sora)
-
-# set API key for the session
-Sys.setenv(SORA_API_KEY = readLines("sora_key"))
-
-# check if the sora API can be reached
-sora_available()
-
-# start the geocoding
-leibniz_addresses <-
-  sora::sora_geocoder(
-    leibniz_addresses
-  )
-
-# check status
-sora::sora_job_status(leibniz_addresses)
-
-# pulling the results from the server
-leibniz_addresses <- sora::sora_results(leibniz_addresses)
-
-leibniz_addresses
-```
-
-::: {.fragment}
-```{r}
-#| echo: false
-# pulling the results from the server
-leibniz_addresses <- sora::sora_results(leibniz_addresses)
-
-leibniz_addresses
-```
-:::
-
-## Convert To `sf` Object And Plot
-
-```{r}
-#| fig.asp: 1
-#| message: false
-#| output-location: column-fragment
-leibniz_addresses_sf <-
-  leibniz_addresses |> 
-  sf::st_as_sf(coords = c("x", "y"), crs = 4326)
-
-tmaptools::read_osm(
-  leibniz_addresses_sf, 
-  type = "esri-topo"
-) |> 
-  terra::rast() |> 
-  tm_shape() +
-  tm_rgb() +
-  tm_shape(leibniz_addresses_sf) +
-  tm_dots(size = 2, col = "red")
-```
-
-
-## Data Linking
-
-Linking via common identifiers is most commonly used but comes with challenges (e.g., territorial status and land reforms? Comparable units? Heterogeneity within units?).
-
-![](../img/data_linking.png){.r-stretch fig-align="center"}
-
-## Spatial linking methods (examples) I
+Geocoding is particularly interesting in survey research: we want to link respondents' locations to contextual data.
 
 :::: columns
-::: {.column width="50%"}
-Lookups
+::: {.column .fragment width="50%"}
+**The workflow:**
 
-<small>e.g., `sf::st_join()`</small>
+1. Geocode respondent addresses 
+2. Link coordinates to spatial data (rasters, polygons)
+3. Attach context variables to survey dataset
+4. Model individual outcomes with spatial context
+::: 
+::: {.column .fragment width="50%"}
+**But the same techniques apply to:**
 
-![](../img/lookup.png){fig-align="center" width="50%"}
-:::
+- Firms and their addresses 
+- Public institutions 
+- Event data locations 
+- Historical monuments
+- ....
+::: 
+:::: 
 
-::: {.column width="50%"}
-Circles 
+## Distance & Proximity {.center style="text-align: center;"}
 
-<small>e.g., `sf::st_buffer()`</small>
 
-![](../img/circle.png){fig-align="center" width="50%"}
-:::
-::::
+## Why distance matters in social science
 
-## Spatial linking methods (examples) II
-
-:::: columns
-::: {.column width="50%"}
-Squares
-
-<small>e.g., `sf::st_buffer(..., endCapStyle = "SQUARE")`</small>
-
-![](../img/square.png){fig-align="center" width="50%"}
-:::
-
-::: {.column width="50%"}
-Isochrones
-
-<small>e.g., `openrouteservice::ors_isochrones()`</small>
-
-![](../img/isochrone.png){fig-align="center" width="50%"}
-:::
-::::
-
-## Cheatsheet: Spatial Operations
-
-An overview of spatial operations using the `sf` package can be accessed [here](https://ugoproto.github.io/ugo_r_doc/pdf/sf.pdf).
-
-![](../img/cheatsheet.png){.r-stretch fig-align="center"}
-
-## `sf` vs. `sora`
+Distance shapes **behaviour**, **exposure**, and **access**: it is one of the most fundamental spatial variables.
 
 ::::: columns
-::: {.column width="50%"}
-In principle, you are now well-suited to conduct many of these methods on your own, locally using `sf` and other spatial packages. However, this endeavor can still be complicated to setup, data may not be available, or your work station is simply not able to run your applications. To navigate these issues, we (GESIS, IÖR, SOEP) developed a full-blown spatial linking infrastructure in the [SoRa project](https://sora-service.org/). You can install the `sora` package to access its API with this code:
+::: {.column .fragment width="50%"}
+**Survey / individual level:**
 
-```{r}
-#| eval: false
-pak::pkg_install(
-  "git::https://git.gesis.org/sora-service/sora.git"
-)
-```
+- Distance from respondent to nearest polling station → turnout
+- Distance to refugee shelter → attitudes toward refugees
+- Distance to nearest hospital → health care utilisation
+- Distance to school → educational choice
 :::
 
-::: {.column width="50%"}
-![](../img/sora_hex.png){fig-align="center" width="75%"}
+::: {.column .fragment width="50%"}
+**Aggregate / contextual level:**
+
+- Average hospital distance per municipality → accessibility index
+- Distance of municipalities to economic centres → regional inequality
+- Distance to border → cultural and economic integration
 :::
 :::::
 
-## Cheatsheet: Spatial Linking
+## Centroids: the starting point for polygon distances
 
-An overview of (most) of the spatial linking operations using the `sora` package can be accessed in the folder `sessions`.
+When you want to compute distances *from* polygons (e.g., voting precincts, municipalities), you first need a representative point, i.e. the **centroid**.
 
-![](../img/sora_cheatsheet.png){.r-stretch fig-align="center"}
+```{r}
+#| output-location: fragment
+stimmbezirke <- sf::read_sf("../../data/Stimmbezirk.shp") |>
+  sf::st_set_crs(25832) |>   # ETRS89 / UTM Zone 32N
+  sf::st_transform(3035)
+
+# Compute centroids
+stimmbezirk_centroids <- sf::st_centroid(stimmbezirke)
+
+```
+ TODO: plot centroid map
+
+## `sf::st_distance()` 
+
+`st_distance()` computes distances between **all pairs** of features across two datasets. The result is an **n × m matrix** (n precincts × m hospitals). Units are metres because of CRS3035.
+
+```{r}
+#| output-location: fragment
+# hospitals_sf loaded from geocoding section 
+hospitals_sf_3035 <- sf::st_transform(hospitals_sf, 3035)
+
+# Distance from first 5 precincts to all 12 hospitals (in metres)
+dist_matrix <- sf::st_distance(
+  stimmbezirk_centroids[1:5, ],
+  hospitals_sf_3035
+)
+
+round(dist_matrix)
+```
 
 
-## Fake research question
+## `sf::st_nearest_feature()`: nearest neighbour
 
-:::: columns
+For each feature in X, find the **index** of the nearest feature in Y and then calculate distance:
+
+```{r}
+#| output-location: fragment
+#| code-line-numbers: "1-4"
+# For each precinct centroid: index of the nearest hospital
+nearest_idx <- sf::st_nearest_feature(
+  stimmbezirk_centroids,
+  hospitals_sf_3035
+)
+
+head(nearest_idx)
+```
+
+::: {.fragment}
+```{r}
+#| code-line-numbers: "1-8"
+# Use the index to get distances (by_element = TRUE → one distance per row)
+stimmbezirke$dist_to_hospital <- sf::st_distance(
+  stimmbezirk_centroids,
+  hospitals_sf_3035[nearest_idx, ],
+  by_element = TRUE
+)
+
+# Convert to numeric (metres)
+stimmbezirke$dist_to_hospital_m <- as.numeric(stimmbezirke$dist_to_hospital)
+```
+:::
+
+
+## Hospital accessibility per voting precinct
+
+```{r}
+#| fig.asp: 1
+#| output-location: column-fragment
+tm_shape(stimmbezirke) +
+  tm_polygons(
+    fill = "dist_to_hospital_m",
+    fill.legend = tm_legend(
+      title = "Distance to nearest\nhospital (m)"
+    ),
+    fill.scale = tm_scale_intervals(
+      style  = "quantile",
+      n      = 5,
+      values = "viridis"
+    ),
+    col = NA
+  )
+```
+
+
+## Travel Time & Isochrones {.center style="text-align: center;"}
+
+
+## As the crow flies, or not?
+
+::::: columns
 ::: {.column width="50%"}
-Say we're interested in the impact of flooding zones in a neighborhood on individual-level attitudes towards the prepardness of one's municipality regarding future flooding events.
 
-We plan to conduct a survey which is representative of the population of Germany.
+**Straight-line distance** is a useful approximation, but **travel time** better captures real accessibility.
+
+**Isochrones**
+
+An isochrone is a polygon that defines all points reachable within a given travel time from an origin.
+
+- 15-min drive → catchment area of a hospital
+- 30-min walk → effective service radius of a school
 :::
 
 ::: {.column width="50%"}
-![](../img/snoop.jpg){fig-align="center" width="50%"}
-
-<p align = "center"><small>https://imgflip.com/i/9ptcuu</small></p>
+![](../img/isochrone.png){fig-align="center" width="90%"}
 :::
-::::
+:::::
 
-## Synthetic georeferenced survey data
 
-We have added a synthetic dataset of 500 geocoordinates in the `./data/` folder (aggregated to 1 sq km centroids). Initially, it was based on a sample of the georeferenced GESIS Panel.
+## The `osrm` package
+
+[`osrm`](https://rgeomatic.hypotheses.org/2555) provides an R interface to the **OpenStreetMap Routing Machine (OSRM)** which is an open-source routing engine that computes travel times and routes using OSM road network data.
+
+```{r}
+#| eval: false
+
+library(osrm)
+
+# Filter to a Cologne hospital
+cologne_hospital <- hospitals_sf |>
+  dplyr::filter(grepl("Köln|Cologne", ort, ignore.case = TRUE)) |>
+  head(2)
+
+iso <- osrm::osrmIsochrone(
+  loc    = cologne_hospital,
+  breaks = c(15, 30),
+  n    = 60
+)
+```
+
+
+```{r}
+#| echo: false
+# Load pre-computed isochrone result
+# Run prep_isochrones.R first to create this file
+if (file.exists("../../data/isochrones_cologne_hospital.rds") &&
+    !is.null(hospitals_sf)) {
+  iso <- readRDS("../../data/isochrones_cologne_hospital.rds")
+  cologne_hospital <- hospitals_sf |>
+    dplyr::filter(grepl("Köln|Cologne|Koeln", ort, ignore.case = TRUE)) |>
+    head(1) |>
+    sf::st_transform(4326)
+}
+```
+
+## Isochrones around a Cologne hospital
+
 
 ```{r}
 #| fig.asp: .7
 #| output-location: column-fragment
-synthetic_survey_geocoordinates <-
-  readRDS("./data/synthetic_survey_geocoordinates.rds")
+# Clean up: fill small holes, label zones
+iso_clean <- iso |>
+  dplyr::mutate(zone = paste0(isomin, "–", isomax, " min")) |>
+  dplyr::group_by(zone) |>
+  dplyr::summarize(geometry = sf::st_union(geometry))
 
-tmaptools::read_osm(
-  synthetic_survey_geocoordinates, 
-  type = "esri-topo"
-) |> 
-  terra::rast() |> 
-  tm_shape() +
+# cut iso_map to cologne
+cologne_bg <- sf::read_sf("../../data/VG250_KRS.shp") |>
+  dplyr::filter(GEN == "Köln") |>
+  sf::st_transform(sf::st_crs(iso_clean))
+
+iso_cologne <- sf::st_intersection(iso_clean, cologne_bg)
+
+# Basemap tile with river
+tiles <- maptiles::get_tiles(
+  cologne_bg,
+  provider = "CartoDB.Positron",
+  zoom = 11,
+  crop = TRUE
+)
+
+# Plot
+tm_shape(tiles) +
   tm_rgb() +
-  tm_shape(synthetic_survey_geocoordinates) +
-  tm_dots(col = "red")
+tm_shape(iso_cologne) +
+  tm_polygons(
+    fill  = "zone",
+    fill.scale = tm_scale_categorical(
+      values = c("0–15 min" = "#f4a582", "15–30 min" = "#92c5de")
+    ),
+    fill.legend = tm_legend(title = "Drive time"),
+    fill_alpha = 0.7,
+    col = NA
+  ) +
+tm_shape(cologne_bg) +
+  tm_borders(col = "grey40", lwd = 1) +
+tm_shape(cologne_hospital |> sf::st_transform(sf::st_crs(iso_clean))) +
+  tm_dots(fill = "red", size = 0.4)
 ```
 
 
-## Correspondence table
+## `rors`: an alternative routing package
 
-As in any survey that deals with addresses, we need a correspondence table of the distinct identifiers.
+[`rors`](https://jslth.github.io/rors/) (R OpenRouteService) is an alternative that connects to **OpenRouteService** and supports more transport modes:
 
-```{r}
-correspondence_table <-
-  dplyr::bind_cols(
-    id_survey = 
-      stringi::stri_rand_strings(10000, 10) |>  
-      sample(500, replace = FALSE),
-    id = synthetic_survey_geocoordinates$id
-  )
-
-correspondence_table
-```
-
-## Conduct the survey
-
-We 'ask' respondents for some standard sociodemographics. But we also include an item from the [GESIS Panel](https://doi.org/10.4232/1.14114) on environmental attitudes: "The risk of flooding is increasing in the municipality where I live." (`risk_flood`; Range `1`, "Do not agree at all", to `7`, "Fully agree"). Since we cannot share the actual data, we created fake data using the [`faux` package](https://cran.r-project.org/web/packages/faux/index.html).
-
-```{r}
-#| include: false
-secret_data <-
-  sora::sora_request(
-    dataset = sora::sora_custom(synthetic_survey_geocoordinates),
-    link_to = "ioer-monitor-r01rg-2021-1000m",
-    method = "aggregate_attribute",
-    selection_area = "circle",
-    radius = 5000,
-    output = "mean",
-    wait = TRUE
-  )
-
-secret_variable_we_are_hiding_from_you <-
-  faux::rnorm_pre(
-    secret_data$mean, 
-    mu = 5, 
-    sd = 2, 
-    r = -0.3
-  ) |> 
-  round(0)
-
-secret_variable_we_are_hiding_from_you[
-  secret_variable_we_are_hiding_from_you < 1
-] <- 1
-secret_variable_we_are_hiding_from_you[
-  secret_variable_we_are_hiding_from_you > 7
-] <- 7
-```
-
-```{r}
-#| output-location: column-fragment
-fake_survey_data <- 
-  dplyr::bind_cols(
-    id = correspondence_table$id,
-    age = 
-      pmin(pmax(rnorm(500, mean = 50, sd = 15))) |> 
-      round(),
-    gender = 
-      sample(1:3, 500, replace = TRUE, prob = c(.45, .45, .1)) |> 
-      as.factor(),
-    education =
-      pmin(pmax(rnorm(500, mean = 3, sd = 1))) |> 
-      round(),
-    income =
-      pmin(pmax(rlnorm(500, meanlog = log(2500), sdlog = 0.5))) |> 
-      round(),
-    risk_flood = secret_variable_we_are_hiding_from_you
-  )
-
-fake_survey_data
-```
-
-## Hypothesis
-
-*Exposure to flooding zones*
-
-> The higher the exposure to flooding zones the more pessimistic is the opinion about prepardness of municipalities regarding future flooding risks.
-
-## Distribution of our 'survey data'
-
-```{r}
-#| output-location: fragment
-par(mfrow=c(2, 3))
-for (variable in names(fake_survey_data)[-1]) {
-  hist(
-    as.numeric(fake_survey_data[[variable]]), main = variable, xlab = variable
-  )
-}
-```
-
-## Using `sora` to link our data
-
-:::: columns
-::: {.column width="50%"}
-In `sora` (and the [IOER Monitor](https://monitor.ioer.de/?rid=5250), we can find the geospatial indicator we are interested in: the percentage of flood zones to reference area. It's always a good idea to browse the data [online](http://www.ioer-monitor.de/) and to see how the data looks at the homepage of the IEOR...
-:::
-
-::: {.column width="50%"}
-![](../img/R01RG_Raster 1000 m_2024.png){fig-align="center" width="60%"}
-:::
-:::::
-
-## The `sora` datapicker
-
-...but we can also use the `sora` datapicker--again either [online](https://sora.gesis.org/public/datapicker/) or directly within `R`. In the end of this effort, we need a specific ID to feed into the other `sora` functions (see below). So let's search for our flooding data in a resolution of 1000 meters and the collection year 2021.
-
-```{r}
-#| output-location: fragment
-# tabular output of all available spatial datasets
-sora::sora_datapicker("spatial")
-```
-
-## The `sora` datapicker
-
-...but we can also use the `sora` datapicker--again either [online](https://sora.gesis.org/public/datapicker/) or directly within `R`. In the end of this effort, we need a specific ID to feed into the other `sora` functions (see below). So let's search for our flooding data in a resolution of 1000 meters and the collection year 2021.
-
-```{r}
-#| output: false
-#| code-line-numbers: "4-12"
-# tabular output of all available spatial datasets
-sora::sora_datapicker("spatial")
-
-# filtering for the ID we need
-filtered_spatial_data <-
-  sora::sora_datapicker("spatial") |> 
-  dplyr::filter(grepl("flood", title)) |> 
-  dplyr::filter(spatial_resolution == "1000m Raster") |> 
-  dplyr::filter(time_frame == 2021) 
-
-filtered_spatial_data |> 
-  dplyr::select(dataset_id, description)
-```
-
-::: {.fragment}
-```{r}
-#| echo: false
-# filtering for the ID we need
-filtered_spatial_data <-
-  sora::sora_datapicker("spatial") |> 
-  dplyr::filter(grepl("flood", title)) |> 
-  dplyr::filter(spatial_resolution == "1000m Raster") |> 
-  dplyr::filter(time_frame == 2021) 
-
-filtered_spatial_data |> 
-  dplyr::select(dataset_id, description)
-```
-
-The ID we need is `ioer-monitor-r01rg-2021-1000m`.
-:::
-
-## Defining the spatial dataset
-
-All requests to link data in `sora` boil down to this simple schema:
+- 🚗 Driving (car)
+- 🚲 Cycling
+- 🚶 Walking / foot
+- ♿ Wheelchair
 
 ```{r}
 #| eval: false
-linking_job <- 
-  sora_request(
-    dataset,
-    link_to,
-    method,
-    ...
-  )
-```
+library(rors)
 
-We define our `dataset` with our geocoordinates (`fake_survey_geocoordinates`), a spatial dataset `link_to` (IOER data), and a method we want to use for linking (more on that in a minute). Indeed, there's more we can specify as indicated by the `...`.
-
-## Setting up our geocoordinates
-
-Let's start with our geocoordinates. Orginally, `sora` was designed as an interface to georeferenced data, e.g., from SOEP or GESIS. But `sora` can also be used for custom datasets, like our `fake_survey_geocoordinates`. For this purpose, we need the `sora::custom_data()` function.
-
-```{r}
-#| output-location: fragment
-custom_data <- sora::sora_custom(synthetic_survey_geocoordinates)
-
-custom_data
-```
-
-## Setting up our geospatial data
-
-As we did our research, we know the ID of the geospatial data we are interested in: `ioer-monitor-r01rg-2021-1000m`. We can use the function `sora::sora_spatial()` to 'register' the data for the request to the `sora` API.
-
-```{r}
-#| output-location: fragment
-flooding_zones <- sora::sora_spatial("ioer-monitor-r01rg-2021-1000m")
-
-flooding_zones
-```
-
-## Setting up our first linkages
-
-The next step is to define how we want to link both datasets. Let's start with a 5000 meters circular buffer! It's a method of aggregation, which is why we specify it in the first step.
-
-```{r}
-#| output-location: fragment
-linking_method_1 <-
-  sora::sora_linking(
-    "aggregate_attribute",
-    selection_area = "circle",
-    radius = 5000,
-    output = "mean"
-  )
-
-linking_method_1
-```
-
-## Ready to link?
-
-We are now all set. We simply have to enter all these elements into the `sora::sora_request()` function. But wait, we can check first for any issues in our specification:
-
-```{r}
-#| output-location: fragment
-sora::sora_simulate(
-  dataset = custom_data,
-  link_to = flooding_zones,
-  method = linking_method_1
+# Requires free API key from openrouteservice.org
+ors_isochrones(
+  locations = hospitals_sf[1, ],
+  profile   = "foot-walking",
+  range     = c(1800, 3600),  # in seconds: 30 and 60 minutes
+  range_type = "time"
 )
 ```
 
-## Ready to link!
+
+## Exercise 6: Spatial Data Linking 💪 {.center style="text-align: center;"}
+
+🖱️ [Exercise 6a: Geocoding & Distance](exercises/6_Spatial_Joins.html)
+
+
+## Spatial Alignment & Incongruent Units {.center style="text-align: center;"}
+
+## Three operations — three different results
+
+A common point of confusion: `st_intersects`, `st_join`, and `st_intersection` sound similar but do very different things.
+
+| Function | What it returns | Geometry changes? |
+|---|---|---|
+| `st_intersects()` | TRUE/FALSE for each pair | No |
+| `st_join()` | Attributes transferred, original geometry kept | No |
+| **`st_intersection()`** | New features for each overlapping piece | **Yes — geometries are cut** |
+
+But often we want to join even if incongruent!
+
+## A genuinely incongruent case: ZIP ≠ Municipalities
+
+**Postal code areas (PLZ)** and **municipalities (Gemeinden)** are two of the most common spatial units in German social science and their boundaries don't align at all.
+
+::::: columns
+::: {.column width="50%"}
+- Survey respondents are often geocoded by **ZIP code** (what they self-report)
+- Context variables (population density, infrastructure) are measured at **municipality** level
+- A single ZIP code can straddle multiple municipalities — and vice versa
+:::
+
+::: {.column width="50%"}
+```{r}
+#| output-location: fragment
+zip_codes <- sf::st_read(
+  "../../data/plz_gebiete.gpkg",
+  quiet = TRUE
+) |>
+  dplyr::select(zip_code = plz,
+                inhabitants_zip = einwohner)
+
+municipalities <- sf::st_read(
+  "../../data/gemeindegrenzen_2022.gpkg",
+  quiet = TRUE
+) |>
+  dplyr::select(ags = AGS,
+                inhabitants_mun = EWZ,
+                area_mun = KFL)
+
+nrow(zip_codes)
+nrow(municipalities)
+```
+:::
+:::::
+
+
+## Side-by-side: two different polygon layers
+TODO: nicer colors
+
+```{r}
+#| echo: false
+# Subset to a manageable region for display (NRW bounding box approx)
+bbox_nrw <- sf::st_bbox(c(xmin=5.9, ymin=50.3, xmax=9.5, ymax=52.5),
+                         crs = sf::st_crs(4326)) |>
+  sf::st_as_sfc()
+
+zip_nrw <- zip_codes[sf::st_intersects(
+  zip_codes, sf::st_transform(bbox_nrw, sf::st_crs(zip_codes)),
+  sparse = FALSE)[,1], ]
+
+mun_nrw <- municipalities[sf::st_intersects(
+  municipalities, sf::st_transform(bbox_nrw, sf::st_crs(municipalities)),
+  sparse = FALSE)[,1], ]
+```
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| echo: false
+#| fig.asp: 1
+tm_shape(zip_nrw) +
+  tm_polygons(fill = "steelblue", fill_alpha = 0.4, col = "white", lwd = 0.2) +
+  tm_title("ZIP code areas (PLZ)")
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+#| fig.asp: 1
+tm_shape(mun_nrw) +
+  tm_polygons(fill = "coral", fill_alpha = 0.4, col = "white", lwd = 0.2) +
+  tm_title("Municipalities (Gemeinden)")
+```
+:::
+:::::
+
+
+## Performing the intersection
 
 ```{r}
 #| output-location: fragment
-# Starting the actual request to the SoRa API
-linking_run_1 <-
-  sora::sora_request(
-    dataset = custom_data,
-    link_to = flooding_zones,
-    method = linking_method_1
-  )
-```
+# Work with a small subset for speed
+zip_sub <- zip_nrw |>
+  dplyr::slice(1:50) |>
+  sf::st_make_valid()
 
-## Ready to link!
+mun_sub <- sf::st_make_valid(mun_nrw)
 
-```{r}
-#| eval: false
-#| code-line-numbers: "10"
-# Starting the actual request to the SoRa API
-linking_run_1 <-
-  sora::sora_request(
-    dataset = custom_data,
-    link_to = flooding_zones,
-    method = linking_method_1
-  )
+intersection <- sf::st_intersection(zip_sub, mun_sub)
 
-# Getting information about the job's progress
-sora::sora_job_status(linking_run_1)
+cat("ZIP codes (subset):", nrow(zip_sub), "\n")
+cat("After intersection:", nrow(intersection), "\n")
+cat("→ More rows: each ZIP piece gets its own municipality attributes\n")
 ```
 
 ::: {.fragment}
 ```{r}
-#| echo: false
-sora::sora_job_status(linking_run_1)
+intersection$area_m2 <- as.numeric(sf::st_area(intersection))
+
+intersection |>
+  sf::st_drop_geometry() |>
+  dplyr::select(zip_code, ags, area_m2) |>
+  head(5)
 ```
 :::
 
-## Ready to link!
+
+
+
+
+## The problem: which municipality does a survey respondent belong to?
+
+```{r}
+#| output-location: fragment
+survey <- readRDS("../../data/simulated_survey_data.rds")
+
+# Join survey ZIP codes to PLZ geometries
+zip_codes_valid <- survey |>
+  dplyr::filter(!is.na(zip_code), nchar(zip_code) == 5,
+                zip_code %in% zip_codes$zip_code) |>
+  dplyr::left_join(zip_codes, by = "zip_code") |>
+  sf::st_as_sf()
+
+cat("Valid survey ZIP codes:", nrow(zip_codes_valid), "\n")
+```
+
+Each respondent is in a ZIP code — but we want **municipality-level** population density. Three methods, three trade-offs.
 
 ```{r}
 #| echo: false
-while(isFALSE(sora::sora_job_done(linking_run_1))) {
-  Sys.sleep(10)
-}
+# Prepare a small NRW subset for visualizations (reuses zip_sub / mun_sub from Section 4)
+centroid_vis <- zip_sub |>
+  sf::st_point_on_surface() |>
+  sf::st_join(mun_sub) |>
+  dplyr::distinct(zip_code, .keep_all = TRUE)
+
+areal_vis <- zip_sub |>
+  sf::st_join(mun_sub, left = TRUE, largest = TRUE) |>
+  dplyr::distinct(zip_code, .keep_all = TRUE)
+
+interp_vis <- sf::st_interpolate_aw(
+  mun_sub["inhabitants_mun"],
+  zip_sub,
+  extensive = FALSE
+) |>
+  dplyr::bind_cols(
+    zip_sub |> sf::st_drop_geometry() |> dplyr::select(zip_code)
+  )
 ```
+
+
+## Method 1: Centroid matching
+
+Assign the municipality whose territory contains the **centroid** of the respondent's ZIP code.
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+centroid_matched <- zip_codes_valid |>
+  sf::st_point_on_surface() |>
+  sf::st_join(municipalities) |>
+  dplyr::select(zip_code, inhabitants_zip, inhabitants_mun, area_mun) |>
+  dplyr::distinct()
+
+head(centroid_matched |> sf::st_drop_geometry(), 4)
+```
+
+✅ Fast and simple — one municipality per ZIP code
+⚠️ Ignores ZIP codes that straddle two municipalities
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+#| fig.asp: 1
+tm_shape(mun_sub) +
+  tm_borders(col = "gray60", lwd = 0.3) +
+tm_shape(zip_sub) +
+  tm_borders(col = "steelblue", lwd = 0.5) +
+tm_shape(centroid_vis) +
+  tm_dots(
+    fill = "ags",
+    fill.scale = tm_scale_categorical(),
+    fill.legend = tm_legend_hide(),
+    size = 0.25
+  ) +
+  tm_title("Centroid: one point → one municipality")
+```
+:::
+:::::
+
+
+## Method 2: Areal matching
+
+Assign the municipality with the **largest overlap area** with the respondent's ZIP code.
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+areal_matched <- zip_codes_valid |>
+  sf::st_join(municipalities, left = TRUE, largest = TRUE) |>
+  dplyr::select(zip_code, inhabitants_zip, inhabitants_mun, area_mun) |>
+  dplyr::distinct()
+
+head(areal_matched |> sf::st_drop_geometry(), 4)
+```
+
+✅ Still one municipality per ZIP — but better accounts for spatial overlap
+⚠️ Still a hard assignment — ignores partial membership
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+#| fig.asp: 1
+tm_shape(areal_vis) +
+  tm_polygons(
+    fill = "ags",
+    fill.scale = tm_scale_categorical(),
+    fill.legend = tm_legend_hide(),
+    col = NA
+  ) +
+tm_shape(mun_sub) +
+  tm_borders(col = "firebrick", lwd = 0.6) +
+  tm_title("Areal: ZIP colored by largest-overlap municipality")
+```
+:::
+:::::
+
+
+## Method 3: Areal interpolation
+
+**Redistribute** municipality attributes proportionally to the area of overlap with each ZIP code.
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+areal_interpolation_matched <- sf::st_interpolate_aw(
+  municipalities["inhabitants_mun"],
+  zip_codes_valid,
+  extensive = FALSE
+) |>
+  dplyr::bind_cols(
+    zip_codes_valid |>
+      sf::st_drop_geometry() |>
+      dplyr::select(zip_code, inhabitants_zip)
+  ) |>
+  dplyr::select(zip_code, inhabitants_zip, inhabitants_mun) |>
+  dplyr::distinct()
+
+head(areal_interpolation_matched |> sf::st_drop_geometry(), 4)
+```
+
+✅ Soft assignment — values reflect partial overlap proportionally
+⚠️ Assumes uniform distribution within municipalities
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+#| fig.asp: 1
+tm_shape(interp_vis) +
+  tm_polygons(
+    fill = "inhabitants_mun",
+    fill.scale = tm_scale_intervals(
+      style = "quantile", n = 5, values = "viridis"
+    ),
+    fill.legend = tm_legend(title = "Pop. (interpolated)"),
+    col = NA
+  ) +
+tm_shape(mun_sub) +
+  tm_borders(col = "white", lwd = 0.4) +
+  tm_title("Areal interpolation: blended values")
+```
+:::
+:::::
+
+
+## Going further
+
+::::: columns
+::: {.column width="50%"}
+**Full evaluation: the AreaMatch tool**
+
+The [AreaMatch tool](https://kodaqs-toolbox.gesis.org/github.com/StefanJuenger/zipmatching/index/) (KODAQS Toolbox) runs all three methods, compares their accuracy against ground truth, and shows how method choice affects research conclusions.
+
+Especially useful when you need to document and justify the method used in a publication.
+:::
+
+::: {.column width="50%"}
+**Other R packages**
+
+- **`sf::st_interpolate_aw()`** — base sf, what we used here
+- **`areal`** — CRAN package, similar to sf but more explicit control
+- **`smile`** — model-based areal interpolation for more complex cases
+
+All three assume some form of uniform within-unit distribution — the harder the spatial heterogeneity, the larger the bias.
+:::
+:::::
+
+
+## Exercise 6: Spatial Data Linking 💪 {.center style="text-align: center;"}
+
+
+🖱️ [Exercise 6b: Incongruent Units](exercises/6_Areal_Interpolation.html)
+
+
+## Backup / For Home Use {.center style="text-align: center;"}
+
+
+## Georeferenced survey data with `sora`
+
+For researchers working with **geocoded survey data**, the [`sora`](https://sora.gesis.org) package provides a complete, data-protection-compliant workflow for spatial linking.
 
 ```{r}
 #| eval: false
-#| code-line-numbers: "10"
-# Starting the actual request to the SoRa API
-linking_run_1 <-
-  sora::sora_request(
-    dataset = custom_data,
-    link_to = flooding_zones,
-    method = linking_method_1
-  )
+library(sora)
 
-# Getting information about the job's progress
-sora::sora_job_status(linking_run_1)
+# Set API key
+Sys.setenv(SORA_API_KEY = readLines("sora_key"))
+sora_available()
+
+# Load your geocoordinates as a custom dataset
+my_survey_coords <- sora::sora_custom(
+  data = synthetic_survey_geocoordinates,
+  lat  = "lat",
+  lon  = "lon"
+)
+
+# Link to a spatial dataset (e.g., IOER Monitor indicators)
+result <- sora::sora_request(
+  data           = my_survey_coords,
+  dataset        = "your_dataset_id",
+  selection_area = "circle",
+  radius         = 1000,  # metres
+  output         = "mean",
+  wait           = TRUE
+)
 ```
 
-::: {.fragment}
-```{r}
-#| echo: false
-sora::sora_job_status(linking_run_1)
-```
-:::
+[Register for SoRa API access](https://sora.gesis.org/public/sora-user-mod/users/request-api-key)
 
-## Ready to link!
 
-```{r}
-#| eval: false
-#| code-line-numbers: "12-16"
-# Starting the actual request to the SoRa API
-linking_run_1 <-
-  sora::sora_request(
-    dataset = custom_data,
-    link_to = flooding_zones,
-    method = linking_method_1
-  )
+## `sora` linking methods
 
-# Getting information about the job's progress
-sora::sora_job_status(linking_run_1) 
+`sora` supports multiple spatial linking strategies — each suitable for different research questions:
 
-# After the job is finished, download the linked dataset
-linking_run_1_results <- 
-  sora::sora_results(linking_run_1)
+::::: columns
+::: {.column width="33%"}
+**Circle**
 
-linking_run_1_results
-```
+Straight-line buffer around each point
 
-::: {.fragment}
-```{r}
-#| echo: false
-# After the job is finished, download the linked dataset
-linking_run_1_results <- 
-  sora::sora_results(linking_run_1)
-
-linking_run_1_results
+```r
+sora_request(
+  selection_area = "circle",
+  radius = 1000
+)
 ```
 :::
 
-## Let's link these data to our survey data
+::: {.column width="33%"}
+**Square**
 
-The output from `sora` in the console and the returned object is quite verbose. To link these data to our survey data, we may only need the `id` and `mean` variable. 
+Bounding box around each point
 
-```{r}
-#| output-location: column-fragment
-# Reduce linked dataset to id and mean, rename the latter
-linking_run_1_results_reduced <-
-  linking_run_1_results |> 
-  dplyr::transmute(
-    id = as.numeric(id),
-    flood_zones_perc = mean
-  )
-
-# Conduct a simple left join based on the common id
-fake_survey_data_linked <-
-  fake_survey_data |> 
-  dplyr::left_join(
-    linking_run_1_results_reduced,
-    by = "id"
-  )
-
-fake_survey_data_linked
+```r
+sora_request(
+  selection_area = "square",
+  length = 1000
+)
 ```
+:::
 
-## Doing the analysis
+::: {.column width="33%"}
+**Isochrone**
 
-```{r}
-lm(
-  risk_flood ~ age + gender + education + income + flood_zones_perc, 
-  data = fake_survey_data_linked
-) |> 
-  sjPlot::plot_model()
+Travel-time catchment area
+
+```r
+sora_request(
+  selection_area = "isochrone",
+  transport_mode = "foot-walking",
+  routing_type   = "time",
+  interval       = 10
+)
 ```
+:::
+:::::
 
-
-## Exercise 6: Using SoRa💪 {.center style="text-align: center;"}
-
-🖱[Click here for the exercise](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/6_Using_SoRa.html)
+[SoRa documentation & exercises](https://sora.gesis.org)

@@ -1,20 +1,20 @@
 course_content <-
   tibble::tribble(
     ~Day, ~Time, ~Title,
-    "April 09", "10:00-11:30", "Introduction",
-    "April 09", "11:30-11:45", "Coffee Break",
-    "April 09", "11:45-13:00", "Data Formats",
-    "April 09", "13:00-14:00", "Lunch Break",
-    "April 09", "14:00-15:30", "Mapping",
-    "April 09", "15:30-15:45", "Coffee Break",
-    "April 09", "15:45-17:00", "Spatial Wrangling",
-    "April 10", "09:00-10:30", "Spatial Wrangling",
-    "April 10", "10:30-10:45", "Coffee Break",
-    "April 10", "10:45-12:00", "Applied Spatial Linking",
-    "April 10", "12:00-13:00", "Lunch Break",
-    "April 10", "13:00-14:30", "Spatial Analysis",
-    "April 10", "14:30-14:45", "Coffee Break",
-    "April 10", "14:45-16:00", "Spatial Econometrics & Outlook"
+    "June 11", "10:00-11:30", "Introduction",
+    "June 11", "11:30-11:45", "Coffee Break",
+    "June 11", "11:45-13:00", "Data Formats",
+    "June 11", "13:00-14:00", "Lunch Break",
+    "June 11", "14:00-15:30", "Mapping",
+    "June 11", "15:30-15:45", "Coffee Break",
+    "June 11", "15:45-17:00", "Spatial Wrangling",
+    "June 12", "10:00-11:30", "Spatial Wrangling",
+    "June 12", "11:30-11:45", "Coffee Break",
+    "June 12", "11:45-13:00", "Spatial Data Linking",
+    "June 12", "13:00-14:00", "Lunch Break",
+    "June 12", "14:00-15:30", "Spatial Analysis",
+    "June 12", "15:30-15:45", "Coffee Break",
+    "June 12", "15:45-17:00", "Spatial Econometrics & Outlook"
   ) |>
   knitr::kable() |>
   kableExtra::kable_styling() |>

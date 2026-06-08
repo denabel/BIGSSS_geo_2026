@@ -1,7 +1,7 @@
----
+﻿---
 title: "Exercise 7: Neighborhood Matrices and Autocorrelation"
-subtitle: 'Introduction to Geospatial Techniques for Social Scientists in R'
-author: Stefan Jünger, Anne Stroppe & Dennis Abel
+subtitle: 'Geodata & Spatial Regression'
+author: Anne Stroppe & Dennis Abel
 format: 
   html:
     embed-resources: true
