@@ -3,7 +3,7 @@
 # 
 # Content:  Package Installation for Geodata & Spatial Regression 2026 (BIGSS)
 # 
-# Version:  June 08 2026
+# Version:  June 09 2026
 # =============================================================================
 
 # --- Task ---------------------------------------------------------------------
@@ -46,8 +46,7 @@ easypackages::packages(
   "osrm",           # Routing
   "OpenStreetMap",  # Render OSM tiles as background maps
   "tidygeocoder",   # Geocoding via public APIs
-  "exactextractr",  # Fast raster extraction for polygons
-  "areal"           # Areal interpolation
+  "exactextractr"  # Fast raster extraction for polygons
 )
 
 # Spatial statistics
