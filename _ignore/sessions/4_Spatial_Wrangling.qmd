@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Spatial Wrangling"
 subtitle: "Geodata & Spatial Regression"
 author: "Anne-Kathrin Stroppe, Dennis Abel"
@@ -1031,11 +1031,6 @@ If you 'simply' want to aggregate attributes and geometries of vector data, you 
 
 For raster data, you can aggregate with the function `terra::aggregate()`(if you have matching raster files) in combination with `terra::resample()` (if your raster files don't match).
 
-To deal with spatial misalignment:
-
-- [Our `AreaMatch` tool](https://kodaqs-toolbox.gesis.org/github.com/StefanJuenger/zipmatching/index/)
-- [`smile` package](https://lcgodoy.me/smile/)
-- [`areal` package](https://chris-prener.github.io/areal/)
 
 ## Data aggregation
 
