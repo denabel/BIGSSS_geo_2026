@@ -1,5 +1,5 @@
 ﻿---
-title: "Exercise 8: Spatial Regression"
+title: "Exercise 7: Spatial Regression"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne Stroppe & Dennis Abel
 format: 

@@ -513,9 +513,9 @@ ors_isochrones(
 ```
 
 
-## Exercise 6_1: Geocoding & Proximity 💪 {.center style="text-align: center;"}
+## Exercise 5_1: Geocoding & Proximity 💪 {.center style="text-align: center;"}
 
-🖱️ [Exercise _1a: Geocoding & Proximity](https://denabel.github.io/BIGSSS_geo_2026/exercises/6_Spatial_Joins.html)
+🖱️ [Exercise 5_1: Geocoding & Proximity](https://denabel.github.io/BIGSSS_geo_2026/exercises/5_1_Geocoding_Proximity.html)
 
 
 ## Spatial Alignment & Incongruent Units {.center style="text-align: center;"}
@@ -834,10 +834,10 @@ All three assume some form of uniform within-unit distribution — the harder th
 :::::
 
 
-## Exercise 6: Spatial Data Linking 💪 {.center style="text-align: center;"}
+## Exercise 5_2: Incongruent Units 💪 {.center style="text-align: center;"}
 
 
-🖱️ [Exercise 6b: Incongruent Units](https://denabel.github.io/BIGSSS_geo_2026/exercises/6_Areal_Interpolation.html)
+🖱️ [Exercise 5_2: Incongruent Units](https://denabel.github.io/BIGSSS_geo_2026/exercises/5_2_Spatial_Alignment.html)
 
 
 ## Backup / For Home Use {.center style="text-align: center;"}

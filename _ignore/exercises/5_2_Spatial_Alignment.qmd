@@ -1,5 +1,5 @@
 ---
-title: "Exercise 6b: Incongruent Units"
+title: "Exercise 5_2: Incongruent Units"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne-Kathrin Stroppe & Dennis Abel
 format:

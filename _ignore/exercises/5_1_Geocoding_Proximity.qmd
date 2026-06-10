@@ -1,5 +1,5 @@
 ---
-title: "Exercise 6: Spatial Joins"
+title: "Exercise 5_1: Geocoding & Proximity"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne-Kathrin Stroppe & Dennis Abel
 format: 

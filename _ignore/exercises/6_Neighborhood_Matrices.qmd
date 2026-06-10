@@ -1,5 +1,5 @@
 ﻿---
-title: "Exercise 7: Neighborhood Matrices and Autocorrelation"
+title: "Exercise 6: Neighborhood Matrices and Autocorrelation"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne Stroppe & Dennis Abel
 format: 

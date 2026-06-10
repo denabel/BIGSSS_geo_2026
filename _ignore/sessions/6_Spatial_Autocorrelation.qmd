@@ -1180,9 +1180,9 @@ ggplot(lisa) +
 :::
 ::::
 
-## Exercise 7: Neighborhood Matrices
+## Exercise 6: Neighborhood Matrices 💪 {.center style="text-align: center;"}
 
-[Exercise](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/7_Neighborhood_Matrices.html)
+🖱 [Click here for the exercise](https://denabel.github.io/BIGSSS_geo_2026/exercises/6_Neighborhood_Matrices.html)
 
 ## One last bit: bivariate local Moran's I
 

@@ -1,5 +1,5 @@
 ﻿---
-title: "Exercise 6: Using SoRa"
+title: "Exercise 5_3: Using SoRa"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne-Kathrin Stroppe, Dennis Abel
 format: 
