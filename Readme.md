@@ -1,16 +1,18 @@
-# Workshop "Introduction to Geospatial Techniques for Social Scientists in R" (April 23/24, 2026)
+# Workshop "Geodata & Spatial Analysis" (June 11/12, 2026)
 
 <p align=center>   
-<a href="https://github.com/StefanJuenger/gesis-workshop-geospatial-techniques-R-2026/archive/refs/heads/main.zip"><b>CLICK HERE FOR DOWNLOAD ALL COURSE MATERIALS</b></a> 
+<a href="https://github.com/denabel/BIGSSS_geo_2026/archive/refs/heads/main.zip"><b>CLICK HERE FOR DOWNLOAD ALL COURSE MATERIALS</b></a> 
 </p>
 
 <p align=center>   
-<a href="https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/"><b>CLICK HERE FOR AN UNCLUTTERED VIEW</b></a> 
+<a href="https://denabel.github.io/BIGSSS_geo_2026/"><b>CLICK HERE FOR AN UNCLUTTERED VIEW</b></a> 
 </p>
 
-Materials for the GESIS workshop "Introduction to Geospatial Techniques for Social Scientists in R" 
+Materials for the GESIS workshop "Geodata & Spatial Analysis" 
 
 Anne-Kathrin Stroppe (anne-kathrin.stroppe@gesis.org), Dennis Abel (dennis.abel@gesis.org)
+
+Thanks a lot to Stefan Jünger (stefan.juenger@gesis.org), who has co-authored these slides.
 
 ## Workshop Description
 In recent years, many researchers have renewed interest in the spatially integrated social sciences, following the call for a 'spatial turn' among plenty of its subdisciplines. However, to process, visualize, and analyze geospatial data, social scientists must first be trained in specialized tools called Geographic Information Systems (GIS). The good news is: While this may have been an unacquainted undertaking until recently, the familiar open-source statistical language R can now serve as a full-blown GIS for many research applications.
@@ -42,38 +44,38 @@ This page comprises the official workshop repository with the most recent change
 
 ## Slides
 ### Day 1
-[1 Introduction](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/slides/1_Introduction.html)
+[1 Introduction](https://denabel.github.io/BIGSSS_geo_2026/slides/1_Introduction.html)
 
-[2 Data Formats](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/slides/2_Data_Formats.html)
+[2 Data Formats](https://denabel.github.io/BIGSSS_geo_2026/slides/2_Data_Formats.html)
 
-[3 Mapping](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/slides/3_Mapping.html)
+[3 Mapping](https://denabel.github.io/BIGSSS_geo_2026/slides/3_Mapping.html)
 
-[4 Spatial Wrangling](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/slides/4_Spatial_Wrangling.html)
+[4 Spatial Wrangling](https://denabel.github.io/BIGSSS_geo_2026/slides/4_Spatial_Wrangling.html)
 
 ### Day 2
-[6 Applied Spatial Linking](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/slides/6_Applied_Spatial_Linking.html)
+[5 Spatial Alignment](https://denabel.github.io/BIGSSS_geo_2026/slides/5_Geocoding_Proximity_Spatial_Alignment.html)
 
-[7 Spatial Analysis](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/slides/7_Spatial_Analysis.html)
+[6 Spatial Analysis](https://denabel.github.io/BIGSSS_geo_2026/slides/6_Spatial_Analysis.html)
 
-[8 Spatial Econometrics & Outlook](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/slides/8_Spatial_Econometrics_Outlook.html)
+[7 Spatial Econometrics & Outlook](https://denabel.github.io/BIGSSS_geo_2026/slides/7_Spatial_Econometrics_Outlook.html)
 
 ## Exercises
-[1 Package Installation](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/1_Package_Installation.html)
+[1 Package Installation](https://denabel.github.io/BIGSSS_geo_2026/exercises/1_Package_Installation.html)
 
-[2_1 Import Vector Data](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/2_1_Import_Vector_Data.html)
+[2_1 Import Vector Data](https://denabel.github.io/BIGSSS_geo_2026/exercises/2_1_Import_Vector_Data.html)
 
-[2_2 Basic Raster Operations](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/2_2_Basic_Raster_Operations.html)
+[2_2 Basic Raster Operations](https://denabel.github.io/BIGSSS_geo_2026/exercises/2_2_Basic_Raster_Operations.html)
 
-[3_1 Mapping](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/3_1_Mapping.html)
+[3_1 Mapping](https://denabel.github.io/BIGSSS_geo_2026/exercises/3_1_Mapping.html)
 
-[3_2 Fun with Maps](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/3_2_Fun_with_Maps.html)
+[3_2 Fun with Maps](https://denabel.github.io/BIGSSS_geo_2026/exercises/3_2_Fun_with_Maps.html)
 
-[4_1 OSM Data](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/4_1_OSM_Data.html)
+[4_1 OSM Data](https://denabel.github.io/BIGSSS_geo_2026/exercises/4_1_OSM_Data.html)
 
-[4_2 Subsetting and Linking](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/4_2_Subsetting_Linking.html)
+[4_2 Subsetting and Linking](https://denabel.github.io/BIGSSS_geo_2026/exercises/4_2_Subsetting_Linking.html)
 
-[6 Using SoRa](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/6_Using_SoRa.html)
+[5_1 Geocoding Proximity](https://denabel.github.io/BIGSSS_geo_2026/exercises/5_1_Geocoding_Proximity.html)
 
-[7 Neighborhood Matrices](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/7_Neighborhood_Matrices.html)
+[6 Neighborhood Matrices](https://denabel.github.io/BIGSSS_geo_2026/exercises/6_Neighborhood_Matrices.html)
 
-[8 Spatial Regression](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/8_Spatial_Regression.html)
+[7 Spatial Regression](https://denabel.github.io/BIGSSS_geo_2026/exercises/7_Spatial_Regression.html)
