@@ -1,6 +1,5 @@
-# Run this script ONCE before the workshop to create pre-computed data files.
+# Run this script ONCE before the workshop to create pre-computed data file.
 # Run it from the project root: BIGSSS_geo_2026/
-# Requires internet access. Takes ~10-20 minutes for 537 hospitals.
 
 library(tidygeocoder)
 library(readr)
@@ -8,16 +7,18 @@ library(sf)
 library(dplyr)
 library(osrm)
 
-# --- 1. Geocode NRW hospitals ---
-hospitals_nrw <- readr::read_csv("./data/hospitals_nrw.csv",
-                                  show_col_types = FALSE)
+# --- 1. Geocode Cologne hospitals ---
 
+hospitals_cologne <- readxl::read_excel("data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |> 
+  dplyr::select(1:2,4:9) |>
+  setNames(c("land", "kreis", "name", "zusatz", "strasse", "hausnr", "plz", "ort")) |> 
+  dplyr::mutate(address = paste(strasse, hausnr, plz, ort, "Germany"))   |> 
+  dplyr::filter(grepl("K.ln", ort, ignore.case = TRUE)) 
 
-hospitals_geocoded <- hospitals_nrw |>
+hospitals_geocoded <- hospitals_cologne |>
   tidygeocoder::geocode(
-    address = address,
-    method  = "osm",
-    verbose = FALSE
+    address = address,   # "Brückenstr. 45 50996 Köln Germany"
+    method  = "osm"
   )
 
 hospitals_sf <- hospitals_geocoded |>
@@ -25,14 +26,10 @@ hospitals_sf <- hospitals_geocoded |>
   sf::st_as_sf(coords = c("long", "lat"), crs = 4326) |>
   sf::st_transform(3035)
 
-saveRDS(hospitals_sf, "./data/hospitals_nrw_geocoded.rds")
-
 # --- 2. Compute isochrones around a Cologne hospital ---
 
 cologne_hospital <- hospitals_sf |>
-  dplyr::filter(ort == "Koeln" | grepl("ln$", ort)) |>
-  head(1) |>
-  sf::st_transform(4326)
+  head(1)
 
 iso <- osrm::osrmIsochrone(
   loc    = cologne_hospital,

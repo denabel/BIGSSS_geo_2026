@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 6: Spatial Joins"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne-Kathrin Stroppe & Dennis Abel
@@ -18,72 +18,55 @@ editor_options:
 ### Exercises
 
 ::: callout-note
-## `r emo::ji("weight_lifting_man")` Exercise 0: Geocoding
+## `r emo::ji("weight_lifting_man")` Exercise 1: Geocoding
 
-Load the file `hospitals_cologne_exercise.csv` from the `./data` folder. It contains names and addresses of 12 Cologne hospitals from the official Destatis hospital directory.
+Load a number of hospitals from the hospital registry (`./data/krankenhausverzeichnis.xlsx`) or choose any other list of adresses.
 
-1. Inspect the data — which column contains the full address string?
-2. Geocode all 12 hospitals using `tidygeocoder::geocode()` with `method = "osm"`. How many were matched successfully?
-3. Convert the result to an `sf` point layer (CRS 4326), then transform to CRS 3035.
-4. Map the geocoded hospitals on top of the Cologne district outline (`VG250_KRS.shp`, filter to `GEN == "Köln"`).
+1.  Geocode a set of adresses using `tidygeocoder::geocode()` with `method = "osm"`. How many were matched successfully?
+3.  Convert the result to an `sf` point layer (CRS 4326), then transform to CRS 3035.
+4.  Map the geocoded hospitals .
 :::
 
 ::: {.callout-caution collapse="true"}
-## `r emo::ji("bulb")` Tip
-
-Use `sf::st_as_sf(coords = c("long", "lat"), crs = 4326)` to convert — note the order: longitude first, then latitude. Check for `NA` coordinates before converting with `dplyr::filter(!is.na(long))`.
-:::
-
-::: {.callout-tip collapse="true"}
-## `r emo::ji("white_check_mark")` Solution
+## `r emo::ji("bulb")` Tip 1
 
 ```{r}
-library(tidygeocoder); library(sf); library(dplyr); library(tmap)
+#| eval: false
 
-# Load address data
-hospitals <- readr::read_csv("../../data/hospitals_cologne_exercise.csv",
-                              show_col_types = FALSE)
-hospitals
+# load hospital data
+hospitals_cologne <- readxl::read_excel("data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |> 
+  dplyr::select(1:2,4:9) |>
+  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |> 
+  dplyr::mutate(address = paste(strasse, hausnr, plz, ort, "Germany"))   |> 
+  # filter bei 
+  dplyr::filter(grepl("K.ln", ort, ignore.case = TRUE)) 
 
-# Geocode
-hospitals_geocoded <- hospitals |>
-  tidygeocoder::geocode(address = address, method = "osm")
-
-cat("Matched:", sum(!is.na(hospitals_geocoded$lat)), "/", nrow(hospitals_geocoded), "\n")
-
-# Convert to sf
-hospitals_sf <- hospitals_geocoded |>
-  dplyr::filter(!is.na(long)) |>
-  sf::st_as_sf(coords = c("long", "lat"), crs = 4326) |>
-  sf::st_transform(3035)
-
-# Map
-cologne <- sf::read_sf("../../data/VG250_KRS.shp") |>
-  dplyr::filter(GEN == "Köln") |>
-  sf::st_transform(3035)
-
-tm_shape(cologne) +
-  tm_polygons(col = "lightgrey") +
-  tm_shape(hospitals_sf) +
-  tm_dots(col = "steelblue", size = 0.3) +
-  tm_text("name", size = 0.4, ymod = 0.5)
 ```
+
 :::
 
----
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip 2
 
-::: callout-note
-## `r emo::ji("weight_lifting_man")` Exercise 1: Distance & Nearest Neighbour
+Use `sf::st_as_sf(coords = c("long", "lat"), crs = 4326)` to convert. Note the order: longitude first, then latitude.
+Check for `NA` coordinates before converting with `dplyr::filter(!is.na(long))`.
+:::
 
-Using the Cologne voting precincts (`Stimmbezirk.shp`) and a point dataset of your choice, compute the distance from each precinct centroid to the nearest point feature. Map the result.
+
+
+:::: callout-note
+## `r emo::ji("weight_lifting_man")` Exercise 2: Distance & Nearest Neighbour
+
+Using the Cologne voting precincts (`Stimmbezirk.shp`) and a point dataset of your choice, compute the distance from each precinct centroid to the nearest point feature.
+Map the result.
 
 **Choose your point dataset — pick whichever fits your interests:**
 
-::: {.panel-tabset}
-
+::: panel-tabset
 ### 🏥 Option A: Hospitals (from Exercise 0)
 
-Use the hospitals you already geocoded. This continues naturally from Exercise 0.
+Use the hospitals you already geocoded.
+This continues naturally from Exercise 0.
 
 ```{r}
 #| eval: false
@@ -93,7 +76,8 @@ hospitals_sf_3035 <- sf::st_transform(hospitals_sf, 3035)
 
 ### 🚉 Option B: NRW train stops (pre-loaded)
 
-Use the train stop data already in the `./data` folder. Note: CRS is missing — set it manually.
+Use the train stop data already in the `./data` folder.
+Note: CRS is missing — set it manually.
 
 ```{r}
 #| eval: false
@@ -104,7 +88,8 @@ train_stops <- sf::read_sf("./data/nrw_pt_osmtrainstops.shp") |>
 
 ### 🗺️ Option C: Your own OSM feature
 
-Query any feature from OpenStreetMap using the `osmdata` package (as in Session 4). Examples: pharmacies, schools, supermarkets, parks, bus stops.
+Query any feature from OpenStreetMap using the `osmdata` package (as in Session 4).
+Examples: pharmacies, schools, supermarkets, parks, bus stops.
 
 ```{r}
 #| eval: false
@@ -120,21 +105,22 @@ your_features <- osmdata::getbb("Köln") |>
   _$osm_points |>
   sf::st_transform(3035)
 ```
-
 :::
 
 **Steps for all options:**
 
-1. Load `Stimmbezirk.shp`, set CRS to 3035, compute centroids with `sf::st_centroid()`
-2. Find the nearest feature for each centroid using `sf::st_nearest_feature()`
-3. Compute distances with `sf::st_distance(..., by_element = TRUE)`
-4. Map the result — which precincts have the worst access?
-:::
+1.  Load `Stimmbezirk.shp`, set CRS to 3035, compute centroids with `sf::st_centroid()`
+2.  Find the nearest feature for each centroid using `sf::st_nearest_feature()`
+3.  Compute distances with `sf::st_distance(..., by_element = TRUE)`
+4.  Map the result — which precincts have the worst access?
+::::
 
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
 
-Remember: `st_nearest_feature()` returns an *index*, not a distance. Use that index to subset your point layer before calling `st_distance(..., by_element = TRUE)`. Convert the result to numeric metres with `as.numeric()`.
+Remember: `st_nearest_feature()` returns an *index*, not a distance.
+Use that index to subset your point layer before calling `st_distance(..., by_element = TRUE)`.
+Convert the result to numeric metres with `as.numeric()`.
 :::
 
 ::: {.callout-tip collapse="true"}
@@ -176,34 +162,44 @@ tm_shape(stimmbezirke) +
 ```
 :::
 
----
-
 ::: callout-note
 ## `r emo::ji("weight_lifting_man")` Exercise 2
 
-We may not always rely on georeferenced data collected in the whole area of a country. Thus, when exploiting geospatial data for linking, one exercise is to subset the data. This could be a subset of the charging station data used in the lecture. Let's say we conducted a survey in the German federal state North-Rhine Westphalia (NRW).
+We may not always rely on georeferenced data collected in the whole area of a country.
+Thus, when exploiting geospatial data for linking, one exercise is to subset the data.
+This could be a subset of the charging station data used in the lecture.
+Let's say we conducted a survey in the German federal state North-Rhine Westphalia (NRW).
 
-Subset the charger data file yourself by relying on the spatial information of the file `charging_points_ger.csv` and a polygon of NRW. There are two ways to achieve this. How many chargers are located within NRW?
+Subset the charger data file yourself by relying on the spatial information of the file `charging_points_ger.csv` and a polygon of NRW.
+There are two ways to achieve this.
+How many chargers are located within NRW?
 :::
 
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
 
-You need two datasets for that: the point layer `charging_points_ger.csv` (remember to adjust the crs) in the `./data` folder and polygons of NRW. For the latter, you can again use the `osmdata` syntax or one of the shapefiles in the `./data/folder` you filter for NRW.
+You need two datasets for that: the point layer `charging_points_ger.csv` (remember to adjust the crs) in the `./data` folder and polygons of NRW.
+For the latter, you can again use the `osmdata` syntax or one of the shapefiles in the `./data/folder` you filter for NRW.
 :::
 
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
 
-You can explore two functions: `sf::st_join` and `sf::st_intersection()`. The default of `sf::st_join()` will leave you with a 'left-join' and returns a data object with all chargers and matching district information for those located within NRW. You can reset the option to perform an 'inner-join' and keep only the observation that lay within the predefined area (`sf::st_join(x , y, join  = "", left = FALSE)`).
+You can explore two functions: `sf::st_join` and `sf::st_intersection()`.
+The default of `sf::st_join()` will leave you with a 'left-join' and returns a data object with all chargers and matching district information for those located within NRW.
+You can reset the option to perform an 'inner-join' and keep only the observation that lay within the predefined area (`sf::st_join(x , y, join  = "", left = FALSE)`).
 :::
 
 ::: callout-note
 ## `r emo::ji("weight_lifting_man")` Exercise 3
 
-Did the operationalization of charger accessibility convince you? There may be other ways, such as the proportion of residents with max. 1000 m linear distance to the nearest charger.
+Did the operationalization of charger accessibility convince you?
+There may be other ways, such as the proportion of residents with max.
+1000 m linear distance to the nearest charger.
 
-You may not know this, but we have everything we need to create this indicator on a smaller scale as well: charger data, Census data, and our synthetic georeferenced data! So, what is the mean share of residents with max. 1000m linear distance to the nearest train station in a 5km neighborhood of our fake respondents?
+You may not know this, but we have everything we need to create this indicator on a smaller scale as well: charger data, Census data, and our synthetic georeferenced data!
+So, what is the mean share of residents with max.
+1000m linear distance to the nearest train station in a 5km neighborhood of our fake respondents?
 
 You can run the code below to load all the data you need.
 :::
@@ -303,7 +299,8 @@ synthetic_data <-
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
 
-As always, there are several ways to do this. We suggest the following steps:
+As always, there are several ways to do this.
+We suggest the following steps:
 
 1.  Create a point layer with the centroids of all grids in NRW based on the census population layer.
 
@@ -321,7 +318,9 @@ As always, there are several ways to do this. We suggest the following steps:
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
 
-In the add-on slides of the spatial wrangling session, we introduced and gave some information on how to transform the raster to points (and back). To get a `sf` point layer for the raster object, you can use `terra::as.points() |> sf::st_as_sf()`. To rasterize the object, you can use `terra::rasterize(input_points, target_raster, input_raster, field = "target_variable", fun = "mean", background = 0)`.
+In the add-on slides of the spatial wrangling session, we introduced and gave some information on how to transform the raster to points (and back).
+To get a `sf` point layer for the raster object, you can use `terra::as.points() |> sf::st_as_sf()`.
+To rasterize the object, you can use `terra::rasterize(input_points, target_raster, input_raster, field = "target_variable", fun = "mean", background = 0)`.
 :::
 
 ### Solutions
@@ -331,229 +330,93 @@ In the add-on slides of the spatial wrangling session, we introduced and gave so
 
 ```{r}
 #| eval: false
-# load charger
-charger_ger <- 
-  # Read charging station points datae
-  readr::read_delim("./data/charging_points_ger.csv", delim = ";") |> 
-  # Filter out rows with missing longitude or latitude
-  dplyr::filter(!is.na(longitude) & !is.na(latitude)) |> 
-  # Convert data frame to sf object
-  sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 
-
-#  use the OSM function
-nrw <-
-  osmdata::getbb(
-    "Nordrhein-Westfalen", 
-    format_out = "sf_polygon"
-  ) |> 
-  _$multipolygon
-
-# or:
-nrw <- 
-  sf::st_read("./data/VG250_LAN.shp") |> 
-  dplyr::filter(GEN == "Nordrhein-Westfalen") |> 
-  sf::st_transform(4326)
-
-# option 1
-charger_nrw <- 
-  charger_ger |> 
-  # Subset point data to sampling area
-  sf::st_intersection(nrw)
-
-# option 2
-# spatial join
-charger_nrw <-
-  charger_ger |>  
-  sf::st_join(
-    # point layer nrw
-    nrw, 
-    # chose intersect or within
-    join = sf::st_intersects,
-    # option FALSE will 
-    # keep only the chargers 
-    # which could be joined
-    left = FALSE
-  )
- 
-nrow(charger_nrw)
-# 11081 chargers in NRW
-```
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-# load charger
-charger_ger <- 
-  # Read charging station points datae
-  readr::read_delim("../../data/charging_points_ger.csv", delim = ";") |> 
-  # Filter out rows with missing longitude or latitude
-  dplyr::filter(!is.na(longitude) & !is.na(latitude)) |> 
-  # Convert data frame to sf object
-  sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
-
-
-#  use the OSM function
-nrw <-
-  osmdata::getbb(
-    "Nordrhein-Westfalen", 
-    format_out = "sf_polygon"
-  ) |> 
-  _$multipolygon
-
-# or:
-nrw <- 
-  sf::st_read("../../data/VG250_LAN.shp") |> 
-  dplyr::filter(GEN == "Nordrhein-Westfalen") |> 
-  sf::st_transform(4326)
-
-# option 1
-charger_nrw <- 
-  charger_ger |> 
-  # Subset point data to sampling area
-  sf::st_intersection(nrw)
-
-# option 2
-# spatial join
-charger_nrw <-
-  charger_ger |>  
-  sf::st_join(
-    # point layer nrw
-    nrw, 
-    # chose intersect or within
-    join = sf::st_intersects,
-    # option FALSE will 
-    # keep only the chargers 
-    # which could be joined
-    left = FALSE
-  )
- 
-nrow(charger_nrw)
-# 11,081 chargers in NRW
-```
-:::
-
-::: {.callout-tip collapse="true"}
-## `r emo::ji("white_check_mark")` Solution 2
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
 # packages
 library(dplyr)
-library(osmdata)
+library(readxl)
 library(sf)
-library(terra)
+library(tidygeocoder)
+library(tmap)
 
-# load charger
-charger_ger <- 
-  # Read charging station points datae
-  readr::read_delim("../../data/charging_points_ger.csv", delim = ";") |> 
-  # Filter out rows with missing longitude or latitude
-  dplyr::filter(!is.na(longitude) & !is.na(latitude)) |> 
-  # Convert data frame to sf object
-  sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 
-# nrw polygon
-nrw <-
-  osmdata::getbb(
-    "Nordrhein-Westfalen", 
-    format_out = "sf_polygon"
-  ) |>  
-  _$multipolygon
+# Load address data
+bremen_hospitals <- readxl::read_excel("./data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |> 
+  dplyr::select(1:2,4:9) |>
+  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |> 
+  # filter bei 
+  dplyr::filter(state==04)  
 
-# charger nrw
-charger_nrw <- 
-  charger_ger |> 
-  # Subset point data to sampling area
-  sf::st_intersection(nrw)
 
-# Census data
-census_inhabitants <- terra::rast("../../data/census_inhabitants.tiff")
+# Geocode
+hospitals_geocoded <- bremen_hospitals |>
+  tidygeocoder::geocode(address = address, 
+                        method = "osm")
 
-# crs transformations
-nrw <- sf::st_transform(nrw, 3035)
-charger_nrw <- sf::st_transform(charger_nrw, 3035)
+cat("Matched:", sum(!is.na(hospitals_geocoded$lat)), "/", nrow(hospitals_geocoded), "\n")
 
-# Synthetic georeferenced data
-synthetic_data <- 
-  readRDS("../../data/synthetic_survey_coordinates.rds") |> 
-  sf::st_intersection(nrw)
+# Convert to sf
+hospitals_sf <- hospitals_geocoded |>
+  dplyr::filter(!is.na(long)) |>
+  sf::st_as_sf(coords = c("long", "lat"), crs = 4326) |>
+  sf::st_transform(3035)
+
+# Map
+bremen <- sf::read_sf("../../data/VG250_KRS.shp") |>
+  dplyr::filter(GEN == "Bremen") |>
+  sf::st_transform(3035)
+
+tm_shape(bremen) +
+  tm_polygons(col = "lightgrey") +
+  tm_shape(hospitals_sf) +
+  tm_dots(col = "#440154FF", size = 0.3) +
+  tm_text("name", size = 0.4, ymod = 0.5)
 ```
+
 
 ```{r}
-# Extract inhabitants points for North Rhine-Westphalia (NRW)
-nrw_inhabitants <- 
-  census_inhabitants |> 
-  terra::crop(nrw) |>  
-  # convert to points
-  terra::as.points() |>   
-  # convert to sf object
-  sf::st_as_sf() 
+#| echo: false
+#| message: false
+#| warning: false
 
-# Find the nearest charger for each grid centroid
-nearest_charger <- sf::st_nearest_feature(nrw_inhabitants, charger_nrw)
+# packages
+library(dplyr)
+library(readxl)
+library(sf)
+library(tidygeocoder)
+library(tmap)
 
-# Calculate distances from inhabitants to the nearest train station
-distances <- 
-  sf::st_distance(
-    nrw_inhabitants, 
-    charger_nrw[nearest_charger,], 
-    by_element = TRUE
-  ) 
 
-# Create a raster representing population  for NRW
-# NOTE: You could also use the 'old' raster. However, by converting the
-# data the extent of the raster layer might not fit anymore and needs adjustments.
-nrw_rast_inhabitants <- 
-    census_inhabitants |> 
-      terra::crop(nrw)
+# Load address data
+bremen_hospitals <- readxl::read_excel("../../data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |> 
+  dplyr::select(1:2,4:9) |>
+  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |> 
+  # filter bei 
+  dplyr::filter(state==04)  
 
-# Create a raster representing population with train access within 1000m for NRW 
-nrw_rast_inhabitants_access <- 
-  nrw_inhabitants |>  
-  dplyr::mutate(
-    charger_access = ifelse(as.numeric(distances) <= 1000, Einwohner, 0)
-  ) |> 
-  terra::rasterize(
-    nrw_rast_inhabitants, 
-    field = "charger_access", 
-    fun = "mean",
-    background = 0
-  )
 
-# Extract population within 5km buffers around each respondent
-population_buffers <- 
-  terra::extract(
-    nrw_rast_inhabitants, 
-    synthetic_data |> 
-      sf::st_buffer(5000), 
-    fun = mean,
-    na.rm = TRUE
-  )
+# Geocode
+hospitals_geocoded <- bremen_hospitals |>
+  tidygeocoder::geocode(address = address, 
+                        method = "osm")
 
-# Extract population within 5km buffers considering charger access within 1000m
-population_access_buffers <- 
-  terra::extract(
-    nrw_rast_inhabitants_access, 
-    synthetic_data |> 
-      sf::st_buffer(5000), 
-    fun = mean,
-    na.rm = TRUE
-  )
+cat("Matched:", sum(!is.na(hospitals_geocoded$lat)), "/", nrow(hospitals_geocoded), "\n")
 
-# Combine population data with train access information
-linked_df <- 
-  synthetic_data |> 
-  dplyr::mutate(
-    population = population_buffers[[2]],
-    population_chargeraccess = population_access_buffers[[2]],
-    share_access = population_access_buffers[[2]] / population_buffers[[2]]
-)
+# Convert to sf
+hospitals_sf <- hospitals_geocoded |>
+  dplyr::filter(!is.na(long)) |>
+  sf::st_as_sf(coords = c("long", "lat"), crs = 4326) |>
+  sf::st_transform(3035)
 
-# Summary of the new data
-summary(linked_df)
+# Map
+bremen <- sf::read_sf("../../data/VG250_KRS.shp") |>
+  dplyr::filter(GEN == "Bremen") |>
+  sf::st_transform(3035)
+
+tm_shape(bremen) +
+  tm_polygons(col = "lightgrey") +
+  tm_shape(hospitals_sf) +
+  tm_dots(col = "#440154FF", size = 0.3) +
+  tm_text("name", size = 0.4, ymod = 0.5)
 ```
 :::
+
