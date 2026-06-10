@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Spatial Analysis"
 subtitle: "Geodata & Spatial Regression"
 author: "Anne Stroppe & Dennis Abel"
@@ -13,7 +13,6 @@ format:
     scrollable: true
     slide-number: "c/t"
     logo: ../img/GESIS-Logo_2024.svg.png
-    fig-align: center
 editor_options: 
   chunk_output_type: console
 ---
