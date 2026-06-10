@@ -339,12 +339,12 @@ For each feature in X, find the **index** of the nearest feature in Y and then c
 #| output-location: fragment
 #| code-line-numbers: "1-4"
 # For each precinct centroid: index of the nearest hospital
-nearest_idx <- sf::st_nearest_feature(
+nearest_hospital <- sf::st_nearest_feature(
   stimmbezirk_centroids,
   hospitals_sf_3035
 )
 
-head(nearest_idx)
+head(nearest_hospital)
 ```
 
 ::: {.fragment}
@@ -353,7 +353,7 @@ head(nearest_idx)
 # Use the index to get distances (by_element = TRUE → one distance per row)
 stimmbezirke$dist_to_hospital <- sf::st_distance(
   stimmbezirk_centroids,
-  hospitals_sf_3035[nearest_idx, ],
+  hospitals_sf_3035[nearest_hospital, ],
   by_element = TRUE
 )
 
@@ -463,16 +463,16 @@ cologne_bg <- sf::read_sf("./data/VG250_KRS.shp") |>
 iso_cologne <- sf::st_intersection(iso_clean, cologne_bg)
 
 # Basemap tile with river
-# tiles <- maptiles::get_tiles(
-#   cologne_bg,
-#   provider = "CartoDB.Positron",
-#   zoom = 11,
-#   crop = TRUE
-# )
+ tiles <- maptiles::get_tiles(
+   cologne_bg,
+   provider = "CartoDB.Positron",
+   zoom = 11,
+   crop = TRUE
+ )
 
 # Plot
-# tm_shape(tiles) +
-#   tm_rgb() +
+ tm_shape(tiles) +
+   tm_rgb() +
 tm_shape(iso_cologne) +
   tm_polygons(
     fill  = "zone",
@@ -569,7 +569,6 @@ nrow(municipalities)
 
 
 ## Side-by-side: two different polygon layers
-TODO: nicer colors
 
 ```{r}
 #| echo: false
@@ -593,7 +592,7 @@ mun_nrw <- municipalities[sf::st_intersects(
 #| echo: false
 #| fig.asp: 1
 tm_shape(zip_nrw) +
-  tm_polygons(fill = "steelblue", fill_alpha = 0.4, col = "white", lwd = 0.2) +
+  tm_polygons(fill = "#bc3754", fill_alpha = 0.4, col = "white", lwd = 0.2) +
   tm_title("ZIP code areas (PLZ)")
 ```
 :::
@@ -603,7 +602,7 @@ tm_shape(zip_nrw) +
 #| echo: false
 #| fig.asp: 1
 tm_shape(mun_nrw) +
-  tm_polygons(fill = "coral", fill_alpha = 0.4, col = "white", lwd = 0.2) +
+  tm_polygons(fill = "#f98e09", fill_alpha = 0.4, col = "white", lwd = 0.2) +
   tm_title("Municipalities (Gemeinden)")
 ```
 :::
@@ -616,20 +615,21 @@ tm_shape(mun_nrw) +
 #| output-location: fragment
 # Work with a small subset for speed
 zip_sub <- zip_nrw |>
-  dplyr::slice(1:50) |>
-  sf::st_make_valid()
+  dplyr::slice(1:50) 
 
-mun_sub <- sf::st_make_valid(mun_nrw)
+intersection <- sf::st_intersection(zip_sub, mun_nrw)
 
-intersection <- sf::st_intersection(zip_sub, mun_sub)
+# Number of ZIP code
+nrow(zip_sub)
 
-cat("ZIP codes (subset):", nrow(zip_sub), "\n")
-cat("After intersection:", nrow(intersection), "\n")
-cat("→ More rows: each ZIP piece gets its own municipality attributes\n")
+# After intersection: each zip "piece" municipality information
+nrow(intersection)
 ```
 
 ::: {.fragment}
 ```{r}
+
+# calculate area of each zip-municipality overlap
 intersection$area_m2 <- as.numeric(sf::st_area(intersection))
 
 intersection |>
@@ -640,143 +640,78 @@ intersection |>
 :::
 
 
-
-
-
 ## The problem: which municipality does a survey respondent belong to?
 
-```{r}
-#| output-location: fragment
-survey <- readRDS("./data/simulated_survey_data.rds")
+Imagine: For each respondent we have a ZIP code but we need to match population density from a municipality-level data set. So we need to decide: In which 
+municipality does each survey respondent live?
 
-# Join survey ZIP codes to PLZ geometries
-zip_codes_valid <- survey |>
-  dplyr::filter(!is.na(zip_code), nchar(zip_code) == 5,
-                zip_code %in% zip_codes$zip_code) |>
-  dplyr::left_join(zip_codes, by = "zip_code") |>
-  sf::st_as_sf()
-
-cat("Valid survey ZIP codes:", nrow(zip_codes_valid), "\n")
-```
-
-Each respondent is in a ZIP code — but we want **municipality-level** population density. Three methods, three trade-offs.
-
-```{r}
-#| echo: false
-# Prepare a small NRW subset for visualizations (reuses zip_sub / mun_sub from Section 4)
-centroid_vis <- zip_sub |>
-  sf::st_point_on_surface() |>
-  sf::st_join(mun_sub) |>
-  dplyr::distinct(zip_code, .keep_all = TRUE)
-
-areal_vis <- zip_sub |>
-  sf::st_join(mun_sub, left = TRUE, largest = TRUE) |>
-  dplyr::distinct(zip_code, .keep_all = TRUE)
-
-interp_vis <- sf::st_interpolate_aw(
-  mun_sub["inhabitants_mun"],
-  zip_sub,
-  extensive = FALSE
-) |>
-  dplyr::bind_cols(
-    zip_sub |> sf::st_drop_geometry() |> dplyr::select(zip_code)
-  )
-```
-
+![](../img/this-is-fine.jpg){.r-stretch fig-align="center"}
 
 ## Method 1: Centroid matching
 
-Assign the municipality whose territory contains the **centroid** of the respondent's ZIP code.
+Assign the municipality whose territory contains the **centroid** of the respondent's ZIP code. This is fast and simple but ignores that zip code
+straddle several municipalities or distribution of inhabitants.
+
 
 ::::: columns
 ::: {.column width="50%"}
 ```{r}
-centroid_matched <- zip_codes_valid |>
-  sf::st_point_on_surface() |>
+centroid_matched <- zip_sub |>
+  sf::st_centroid() |>
   sf::st_join(municipalities) |>
-  dplyr::select(zip_code, inhabitants_zip, inhabitants_mun, area_mun) |>
+  dplyr::select(zip_code, inhabitants_mun, area_mun) |>
   dplyr::distinct()
 
 head(centroid_matched |> sf::st_drop_geometry(), 4)
 ```
 
-✅ Fast and simple — one municipality per ZIP code
-⚠️ Ignores ZIP codes that straddle two municipalities
 :::
 
 ::: {.column width="50%"}
-```{r}
-#| echo: false
-#| fig.asp: 1
-tm_shape(mun_sub) +
-  tm_borders(col = "gray60", lwd = 0.3) +
-tm_shape(zip_sub) +
-  tm_borders(col = "steelblue", lwd = 0.5) +
-tm_shape(centroid_vis) +
-  tm_dots(
-    fill = "ags",
-    fill.scale = tm_scale_categorical(),
-    fill.legend = tm_legend_hide(),
-    size = 0.25
-  ) +
-  tm_title("Centroid: one point → one municipality")
-```
+![](../img/centroid_linking.png){fig-align="center" size="20%"}
+
 :::
 :::::
 
 
 ## Method 2: Areal matching
 
-Assign the municipality with the **largest overlap area** with the respondent's ZIP code.
+Assign the municipality with the **largest overlap area** with the respondent's ZIP code. This method accounts for the spatial overlap but we still lose information
 
 ::::: columns
 ::: {.column width="50%"}
 ```{r}
-areal_matched <- zip_codes_valid |>
+areal_matched <- zip_sub |>
   sf::st_join(municipalities, left = TRUE, largest = TRUE) |>
   dplyr::select(zip_code, inhabitants_zip, inhabitants_mun, area_mun) |>
   dplyr::distinct()
 
 head(areal_matched |> sf::st_drop_geometry(), 4)
 ```
-
-✅ Still one municipality per ZIP — but better accounts for spatial overlap
-⚠️ Still a hard assignment — ignores partial membership
 :::
 
 ::: {.column width="50%"}
-```{r}
-#| echo: false
-#| fig.asp: 1
-tm_shape(areal_vis) +
-  tm_polygons(
-    fill = "ags",
-    fill.scale = tm_scale_categorical(),
-    fill.legend = tm_legend_hide(),
-    col = NA
-  ) +
-tm_shape(mun_sub) +
-  tm_borders(col = "firebrick", lwd = 0.6) +
-  tm_title("Areal: ZIP colored by largest-overlap municipality")
-```
+![](../img/areal_matching.png){fig-align="center" size="30%"}
 :::
 :::::
 
 
 ## Method 3: Areal interpolation
 
-**Redistribute** municipality attributes proportionally to the area of overlap with each ZIP code.
+**Redistribute** municipality attributes proportionally to the area of overlap 
+with each ZIP code. Values reflect partial overlap proportionally but still 
+assumes uniform distribution within municipalities.
 
 ::::: columns
 ::: {.column width="50%"}
 ```{r}
 areal_interpolation_matched <- sf::st_interpolate_aw(
   municipalities["inhabitants_mun"],
-  zip_codes_valid,
+  zip_sub,
   extensive = FALSE
 ) |>
   dplyr::bind_cols(
-    zip_codes_valid |>
+    zip_sub |>
       sf::st_drop_geometry() |>
       dplyr::select(zip_code, inhabitants_zip)
   ) |>
@@ -786,27 +721,12 @@ areal_interpolation_matched <- sf::st_interpolate_aw(
 head(areal_interpolation_matched |> sf::st_drop_geometry(), 4)
 ```
 
-✅ Soft assignment — values reflect partial overlap proportionally
-⚠️ Assumes uniform distribution within municipalities
+
 :::
 
 ::: {.column width="50%"}
-```{r}
-#| echo: false
-#| fig.asp: 1
-tm_shape(interp_vis) +
-  tm_polygons(
-    fill = "inhabitants_mun",
-    fill.scale = tm_scale_intervals(
-      style = "quantile", n = 5, values = "viridis"
-    ),
-    fill.legend = tm_legend(title = "Pop. (interpolated)"),
-    col = NA
-  ) +
-tm_shape(mun_sub) +
-  tm_borders(col = "white", lwd = 0.4) +
-  tm_title("Areal interpolation: blended values")
-```
+![](../img/areal_interpolation.png){fig-align="center" sizr="30%"}
+
 :::
 :::::
 
@@ -819,33 +739,24 @@ tm_shape(mun_sub) +
 
 The [AreaMatch tool](https://kodaqs-toolbox.gesis.org/github.com/StefanJuenger/zipmatching/index/) (KODAQS Toolbox) runs all three methods, compares their accuracy against ground truth, and shows how method choice affects research conclusions.
 
-Especially useful when you need to document and justify the method used in a publication.
 :::
 
 ::: {.column width="50%"}
-**Other R packages**
+**Other R packages for interpolation**
 
-- **`sf::st_interpolate_aw()`** — base sf, what we used here
 - **`areal`** — CRAN package, similar to sf but more explicit control
 - **`smile`** — model-based areal interpolation for more complex cases
 
-All three assume some form of uniform within-unit distribution — the harder the spatial heterogeneity, the larger the bias.
+All assume some form of uniform within-unit distribution but the harder the spatial heterogeneity, the larger the bias.
 :::
 :::::
-
-
-## Exercise 5_2: Incongruent Units 💪 {.center style="text-align: center;"}
-
-
-🖱️ [Exercise 5_2: Incongruent Units](https://denabel.github.io/BIGSSS_geo_2026/exercises/5_2_Spatial_Alignment.html)
-
 
 ## Backup / For Home Use {.center style="text-align: center;"}
 
 
 ## Georeferenced survey data with `sora`
 
-For researchers working with **geocoded survey data**, the [`sora`](https://sora.gesis.org) package provides a complete, data-protection-compliant workflow for spatial linking.
+For researchers working with **geocoded survey data**, the [`sora`](https://sora-service.org/) package provides a complete, data-protection-compliant workflow for spatial linking.
 
 ```{r}
 #| eval: false
@@ -878,7 +789,7 @@ result <- sora::sora_request(
 
 ## `sora` linking methods
 
-`sora` supports multiple spatial linking strategies — each suitable for different research questions:
+`sora` supports multiple spatial linking strategies that are each suitable for different research questions:
 
 ::::: columns
 ::: {.column width="33%"}
@@ -923,4 +834,5 @@ sora_request(
 :::
 :::::
 
-[SoRa documentation & exercises](https://sora.gesis.org)
+[SoRa slides](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/6_Using_SoRa.html)
+[SoRa exercise](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/6_Using_SoRa.html)

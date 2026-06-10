@@ -1,6 +1,6 @@
-﻿---
+---
 title: "Spatial Econometrics & Outlook"
-author: "Anne-Kathrin Stroppe, Dennis Abel"
+author: "Anne Stroppe, Dennis Abel"
 date: June 12, 2026
 execute:
   echo: true
@@ -1112,26 +1112,7 @@ GIS techniques
 
 </ul>
 
-## Advanced Geospatial Data Processing for Social Scientists
 
-:::: columns
-::: {.column width="50%"}
-
-**09-20 June 2026 Online**
-
-- [Register online](https://training.gesis.org/?site=pDetails&pID=0xA15F954A628C4D36B65167B160D89ED6)
-- With Stefan and Dennis
-- Expand your knowledge of geospatial data wrangling
-- Focus on raster data and complex datacubes
-- Remote sensing and Earth observation APIs
-:::
-
-::: {.column width="50%"}
-![](../img/cube2.png){fig-align="center"}
-
-</small>Source:[R-Spatial](https://raw.githubusercontent.com/r-spatial/stars/master/images/cube2.png)</small>
-:::
-::::
 
 ## Geodata and Spatial Regression Analysis
 
