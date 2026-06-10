@@ -11,7 +11,7 @@ format:
     theme: [simple, tweaks.css, tweaks_code.css]
     smaller: true
     scrollable: true
-    slide-number: false
+    slide-number:  "c/t"
     logo: ../img/GESIS-Logo_2024.svg.png
 editor_options: 
   chunk_output_type: console
@@ -208,14 +208,6 @@ german_states
 plot(german_states["GEN"])
 ```
 
-<!-- ## This is the bounding box -->
-
-<!-- ```{r} -->
-<!-- #| echo: false -->
-<!-- sf::st_bbox(german_states) |>  -->
-<!--     sf::st_as_sfc(crs = sf::st_crs(german_states)) |>  -->
-<!--     plot() -->
-<!-- ``` -->
 
 <!-- ## Inspect your data: classics -->
 
@@ -313,6 +305,17 @@ german_states$geometry[5] |>
   dplyr::glimpse()
 ```
 
+
+## This is the bounding box
+
+```{r}
+#| output-location: fragment
+sf::st_bbox(german_states) |>
+    sf::st_as_sfc(crs = sf::st_crs(german_states)) |>
+    plot()
+```
+
+
 ## Inspect your data: spatial features
 
 Remember: The Coordinate Reference System is critical. A crucial step is to check the CRS of your geospatial data.
@@ -320,12 +323,67 @@ Remember: The Coordinate Reference System is critical. A crucial step is to chec
 ```{r}
 #| output-location: fragment
 # coordinate reference system
-sf::st_crs(german_states) 
+sf::st_crs(german_states)
 ```
+
+
+## A common pitfall: mismatched CRS
+
+`R` won't stop you from plotting two layers with **different CRS** together — it just uses the raw coordinate values, wherever they happen to fall.
+
+```{r}
+#| output-location: fragment
+# Cologne Cathedral, given in geographic coordinates (lon/lat, WGS84)
+cologne_point <- sf::st_sfc(
+  sf::st_point(c(6.9603, 50.9375)),
+  crs = 4326
+)
+
+plot(cologne_point)
+
+```
+
+
+
+## Where did Cologne go? 
+
+The point exists at coordinates (6.96, 50.94). But `german_states` is projected in EPSG:25832, so the long/lat (6.96, 50.94) sits nowhere near the plotted extent.
+
+```{r}
+#| fig.asp: .8
+#| output-location: column-fragment
+plot(sf::st_geometry(german_states))
+plot(cologne_point, add = TRUE, col = "red", pch = 19, cex = 2)
+```
+
+
+## Fix: align the CRS 
+
+```{r}
+#| fig.asp: .8
+#| output-location: column-fragment
+cologne_point_aligned <- sf::st_transform(
+  cologne_point,
+  sf::st_crs(german_states)
+)
+
+plot(sf::st_geometry(german_states))
+plot(cologne_point_aligned, add = TRUE, col = "red", pch = 19, cex = 2)
+```
+
+## Checklist: after importing vector data, always check...
+
+::: {.incremental}
+- **`sf::st_crs()`**: is a CRS defined at all? Does it match your other layers?
+- **`sf::st_geometry_type()`**: points, lines, or polygons, as expected?
+- **`sf::st_bbox()`**: does the extent make sense? 
+- **`sf::st_is_valid()`** / **`sf::st_make_valid()`**: are geometries topologically valid? 
+- **plot**: does it look right?
+:::
 
 ## Exercise 2_1: Import Vector Data💪 {.center style="text-align: center;"}
 
-🖱[Click here for the exercise](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/2_1_Import_Vector_Data.html)
+🖱[Click here for the exercise](https://denabel.github.io/BIGSSS_geo_2026/exercises/2_1_Import_Vector_Data.html)
 
 ## 2. Raster data {.center style="text-align: center;"}
 
@@ -634,4 +692,4 @@ terra::plot(immigrant_rate)
 
 ## Exercise 2_2: Basic Raster Operations💪 {.center style="text-align: center;"}
 
-🖱 [Click here for the exercise](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/2_2_Basic_Raster_Operations.html)
+🖱 [Click here for the exercise](https://denabel.github.io/BIGSSS_geo_2026/exercises/2_2_Basic_Raster_Operations.html)

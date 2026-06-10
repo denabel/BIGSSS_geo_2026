@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 2: Fun with Maps"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne Stroppe & Dennis Abel
@@ -17,7 +17,6 @@ callout-appearance: minimal
 #| include: false
 library(emo)
 ```
-
 
 ### Exercises
 

@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 2_2: Basic Raster Operations"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne-Kathrin Stroppe, Dennis Abel
@@ -39,30 +39,36 @@ Now, use this matrix to create a raster layer and plot it.
 The `terra::rast()` function can be fed with matrices to create a raster layer.
 :::
 
-The `terra::rast()` function can not only be used to create raster data on the fly, but it is also quite dull. Instead, we can use it to import already prepared data.
+The `terra::rast()` function can not only be used to create raster data on the fly, but it is also quite dull.
+Instead, we can use it to import already prepared data.
 
 ::: callout-note
 ## 🏋 Exercise 3
 
-Import one of the raster `.tif` files in the `data` folder of the workshop directory. Have a look at it!
+Import one of the raster `.tif` files in the `data` folder of the workshop directory.
+Have a look at it!
 :::
 
 ::: {.callout-caution collapse="true"}
 ## 💡 Tip
 
-Make sure your file paths are set correctly. You can check them with `getwd()`. Setting is done with `setwd()`.
+Make sure your file paths are set correctly.
+You can check them with `getwd()`.
+Setting is done with `setwd()`.
 :::
 
 ::: callout-note
 ## 🏋️ Exercise 4
 
-Import the raster data on inhabitants and citizens in Cologne. Create a new layer showing the proportion of immigrants (!) in each grid cell between 0 and 1.
+Import the raster data on inhabitants and citizens in Cologne.
+Create a new layer showing the proportion of immigrants (!) in each grid cell between 0 and 1.
 :::
 
 ::: {.callout-caution collapse="true"}
 ## 💡 Tip
 
-You can handle raster layers as any simple data table using `+`, `-`, or `/` operators, e.g., to create a new layer that you might need. But make sure to define all missing values first.
+You can handle raster layers as any simple data table using `+`, `-`, or `/` operators, e.g., to create a new layer that you might need.
+But make sure to define all missing values first.
 :::
 
 ### Solutions

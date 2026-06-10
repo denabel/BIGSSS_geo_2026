@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 3_1: Mapping"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne Stroppe & Dennis Abel
@@ -15,14 +15,18 @@ callout-appearance: minimal
 
 ### Exercises
 
-We've finally arrived at creating our first maps! This exercise focuses on `ggplot2` as our primary tool — from a first look at the data all the way to a multi-layer customized map.
+We've finally arrived at creating our first maps!
+This exercise focuses on `ggplot2` as our primary tool — from a first look at the data all the way to a multi-layer customized map.
 
 ::: callout-note
 ## `r emo::ji("weight_lifting_man")` Exercise 1
 
-Load `attributes_cologne.shp` using `sf::read_sf()`. Inspect the attribute table — which variables does the data contain? Choose **two columns** that interest you and create one choropleth map for each.
+Load `attributes_cologne.shp` using `sf::read_sf()`.
+Inspect the attribute table — which variables does the data contain?
+Choose **two columns** that interest you and create one choropleth map for each.
 
-What do the two maps tell you? Can you spot any spatial patterns?
+What do the two maps tell you?
+Can you spot any spatial patterns?
 :::
 
 ::: {.callout-caution collapse="true"}
@@ -40,40 +44,41 @@ attributes_cologne |>
 ::: callout-note
 ## `r emo::ji("weight_lifting_man")` Exercise 2
 
-Pick the variable from Exercise 1 you find most interesting. Change and add layers:
+Pick the variable from Exercise 1 you find most interesting.
+Change and add layers:
 
-- Add the EV charging stations from `charger_cologne.shp` as a point layer on top
-- Try different (colorblind-friendly) palettes.
-- Change the **shape** of the charging station points.
-- Map point **size** to charging power (column name `powr_kw`)
-- Experiment with legend position
-- Experiment with the thme
-- Save the result as a PNG with `ggsave()`
+-   Add the EV charging stations from `charger_cologne.shp` as a point layer on top
+-   Try different (colorblind-friendly) palettes.
+-   Change the **shape** of the charging station points.
+-   Map point **size** to charging power (column name `powr_kw`)
+-   Experiment with legend position
+-   Experiment with the thme
+-   Save the result as a PNG with `ggsave()`
 :::
 
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
 
-- Palette options for `scale_fill_viridis_c()`: `option = "plasma"`, `"magma"`, `"viridis"`, `"cividis"`
-- Point shape: set `shape =` outside `aes()` with a number 0–25 (run `?pch` for a visual overview)
-- Size by power: `aes(size = powr_kw)` inside `geom_sf()`, then `scale_size_continuous(name = "Power (kW)")`
-- Legend position: `theme(legend.position = "bottom")` — also try `"left"`, `"top"`, or `c(0.1, 0.9)`
+-   Palette options for `scale_fill_viridis_c()`: `option = "plasma"`, `"magma"`, `"viridis"`, `"cividis"`
+-   Point shape: set `shape =` outside `aes()` with a number 0–25 (run `?pch` for a visual overview)
+-   Size by power: `aes(size = powr_kw)` inside `geom_sf()`, then `scale_size_continuous(name = "Power (kW)")`
+-   Legend position: `theme(legend.position = "bottom")` — also try `"left"`, `"top"`, or `c(0.1, 0.9)`
 :::
 
 ::: callout-note
 ## `r emo::ji("weight_lifting_man")` Exercise 3
 
-Display two of your maps next to each other for comparison. There are several ways to do this both within the ggplot argument and by using the map objects. Try at least one!
-
+Display two of your maps next to each other for comparison.
+There are several ways to do this both within the ggplot argument and by using the map objects.
+Try at least one!
 :::
 
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
 
-- `facet_wrap`: pivot first with `tidyr::pivot_longer()`, then `facet_wrap(~ variable)` — note: forces a shared color scale for both panels
-- `patchwork`: `library(patchwork)` → `map1 | map2`
-- `cowplot`: `cowplot::plot_grid(map1, map2, ncol = 2, labels = c("A", "B"))`
-
+-   `facet_wrap`: pivot first with `tidyr::pivot_longer()`, then `facet_wrap(~ variable)` — note: forces a shared color scale for both panels
+-   `patchwork`: `library(patchwork)` → `map1 | map2`
+-   `cowplot`: `cowplot::plot_grid(map1, map2, ncol = 2, labels = c("A", "B"))`
 :::
 
 ### Solutions

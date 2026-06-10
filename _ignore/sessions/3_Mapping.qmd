@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Mapping"
 subtitle: "Geodata & Spatial Regression"
 author: "Anne-Kathrin Stroppe, Dennis Abel"
@@ -8,7 +8,7 @@ execute:
 format:
   revealjs:
     embed-resources: true
-    theme: [simple, tweaks.css]
+    theme: [simple, tweaks.css, tweaks_code.css]
     smaller: true
     scrollable: true
     slide-number: "c/t"
@@ -51,11 +51,9 @@ course_content |>
   kableExtra::kable_styling(font_size = 20)
 ```
 
-## Fun with flags... MAPS!
+## Aim of this Session
 
-![](../img/fun_with_flags.jpg){.r-stretch fig-align="center"}
-
-<small>Fun with Flags by Dr. Sheldon Cooper. [Big Bang Theory](https://youtu.be/_e8PGPrPlwA)</small>
+![](../img/ggplot2.png){.r-stretch fig-align="center"}
 
 ## Fun with maps
 
@@ -74,7 +72,7 @@ plot(attributes_cologne["ecar"])
 ## What makes a good map?
 
 :::: columns
-::: {.column width="40%"}
+::: {.column width="50%"}
 **Good Mapping**
 
 - Reduction to most important information
@@ -83,7 +81,7 @@ plot(attributes_cologne["ecar"])
 - Adjusted for color vision deficiencies
 :::
 
-::: {.column width="40%"}
+::: {.column .fragment width="50%"}
 **Bad Mapping**
 
 - Overcrowding and overlapping
@@ -112,7 +110,7 @@ plot(attributes_cologne["ecar"])
 :::
 ::::
 
-## Our approach: `ggplot2`
+## Our approach: `ggplot2` 
 
 `R` offers several packages for mapping spatial data:
 
@@ -165,6 +163,10 @@ plot_call +
   scales +
   facets
 ```
+
+## Components of a Plot
+
+![](../img/ggplot-layers.png){.r-stretch fig-align="center"}
 
 ## Cologne data
 
@@ -233,16 +235,16 @@ ggplot() +
 
 This map will be our canvas for the session. We will cover five building blocks:
 
-- **THE MAP**: adding attributes, choosing colors/palettes, adding layers
-- **THE LEGEND**: position, sizes, display
-- **THE ENVIRONMENT**: choosing from themes and building your own
-- **THE META-INFORMATION**: titles and sources
-- **THE EXTRAS**: scales and compass
+- **The Map**: adding attributes, choosing colors/palettes, adding layers
+- **The Legend**: position, sizes, display
+- **The Environment**: choosing from themes and building your own
+- **The Meta-information**: titles and sources
+- **The Extras**: scales and compass
 
 If you are working on your maps, the [ggplot2 cheatsheets](https://rstudio.github.io/cheatsheets/html/data-visualization.html) will help you with an overview of scales, themes, labels, facets, and more.
 
 
-## THE MAP: a basis
+## Geometric objects: a basis
 
 :::: columns
 ::: {.column width="50%"}
@@ -273,7 +275,7 @@ ggplot() +
 :::
 ::::
 
-## THE MAP: add the `aesthetics`
+## Aesthetic mappings: `aes()`
 
 We'll concentrate on mapping the share of electric cars per district.
 
@@ -307,7 +309,7 @@ ggplot() +
 :::
 ::::
 
-## THE MAP: color palette
+## Scales: color palette
 
 Are you having trouble choosing the right color? Some excellent tutorials exist, e.g. by [Michael Toth](https://michaeltoth.me/a-detailed-guide-to-ggplot-colors.html).
 
@@ -340,7 +342,7 @@ ggplot() +
 :::
 ::::
 
-## THE MAP: fine-tuning
+## Scales: fine-tuning
 
 :::: columns
 ::: {.column width="50%"}
@@ -415,7 +417,7 @@ ggsave("cologne_map_better.png", cologne_map_better, dpi = 300)
 ```
 
 
-## THE MAP: point layers
+## Geometric objects: point layers
 
 Point data loaded with `sf::read_sf()` is displayed with the same `geom_sf()` — `ggplot2` detects the geometry type automatically.
 
@@ -462,7 +464,7 @@ ggplot() +
 :::
 ::::
 
-## THE MAP: add a point layer
+## Geometric objects: combining layers
 
 `geom_sf()` stacks layers in order — add the point layer **after** the polygon layer so it appears on top.
 
@@ -524,7 +526,7 @@ ggplot() +
 ::::
 
 
-## THE LEGEND: dealing with the legend
+## Scales: legends
 
 You can handle everything concerning the legend within the `scale_*`. 
 
@@ -580,7 +582,7 @@ ggplot() +
 :::
 ::::
 
-## THE ENVIRONMENT: get rid of everything?!
+## Themes: get rid of everything?!
 
 The `theme` controls all non-data displays. Instead of removing everything, try the built-in themes.
 
@@ -614,7 +616,7 @@ cologne_map +
 :::
 ::::
 
-## THE ENVIRONMENT: build your own `theme`
+## Themes: build your own `theme`
 
 :::: columns
 ::: {.column width="50%"}
@@ -651,7 +653,7 @@ cologne_map +
 :::
 ::::
 
-## THE META-INFORMATION: adding `labs`
+## Labels & sources: adding `labs`
 
 Always include and cite your data sources. `labs()` lets you add titles, subtitles, and captions directly to the map.
 
@@ -685,9 +687,9 @@ cologne_map +
 :::
 ::::
 
-## Exercise 3_1: Basic Maps
+## Exercise 3_1: Basic Maps💪 {.center style="text-align: center;"}
 
-[Exercise](exercises/3_1_Mapping.html)
+[Exercise](https://denabel.github.io/BIGSSS_geo_2026/exercises/3_1_Mapping.html)
 
 
 ## To be continued...
@@ -1115,7 +1117,7 @@ colorBlindness::cvdPlot(tmp)
 
 <small>Created with the package [`colorBlindness`](https://cran.r-project.org/web/packages/colorBlindness/index.html). Viridis palettes are designed to be perceptually uniform and accessible for color vision deficiencies.</small>
 
-## `tmap`: An Alternative
+## `tmap`: An Alternative 
 
 [`tmap`](https://r-tmap.github.io/tmap/) is another popular package for thematic mapping in R:
 
@@ -1156,8 +1158,8 @@ For learning more: [r-tmap.github.io/tmap](https://r-tmap.github.io/tmap/)
 
 
 
-## Exercise 3_2: Fun with Maps
+## Exercise 3_2: Fun with Maps💪 {.center style="text-align: center;"}
 
-[Exercise](exercises/3_2_Fun_with_Maps.html)
+[Exercise](https://denabel.github.io/BIGSSS_geo_2026/exercises/3_2_Fun_with_Maps.html)
 
 

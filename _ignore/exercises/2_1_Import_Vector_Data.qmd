@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 2_1: Import Vector Data"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne-Kathrin Stroppe, Dennis Abel
@@ -15,14 +15,17 @@ callout-appearance: minimal
 
 ### Exercises
 
-Let's get started with some hands-on exercises and exploring some data! This exercise focuses on importing different vector data geometries from various sources and getting used to simple feature data tables.
+Let's get started with some hands-on exercises and exploring some data!
+This exercise focuses on importing different vector data geometries from various sources and getting used to simple feature data tables.
 
-In the folder `data`, you can find the data files prepped for all the exercises which rely on preexisting data sets. However, if you like to play around with your data, feel free to do so!
+In the folder `data`, you can find the data files prepped for all the exercises which rely on preexisting data sets.
+However, if you like to play around with your data, feel free to do so!
 
 ::: callout-note
 ## 🏋 Exercise 1
 
-Load the administrative borders of Germany. For this purpose, import the shapefile `VG250_STA.shp` from the respective folder and assign it to an object named `germany`.
+Load the administrative borders of Germany.
+For this purpose, import the shapefile `VG250_STA.shp` from the respective folder and assign it to an object named `germany`.
 
 Plot the newly created object.
 :::
@@ -33,7 +36,9 @@ Plot the newly created object.
 Don't forget to load the packages `sf` and set your working directory before starting this exercise.
 :::
 
-The `R` console output already gives you some information on the data you just loaded. You also see that the object `germany` appeared in your environment. Let's explore the data set a little bit closely.
+The `R` console output already gives you some information on the data you just loaded.
+You also see that the object `germany` appeared in your environment.
+Let's explore the data set a little bit closely.
 
 ::: callout-note
 ## 🏋 Exercise 2
@@ -55,13 +60,54 @@ You can either extract the information directly from the output or problematical
 ::: callout-note
 ## 🏋 Exercise 3
 
-Do you have an idea why there are 11 observations instead of only 1, even though we expected a shapefile with the polygon of Germany? Create a new object that contains only one observation filtered by the variable `GF == 4`. The data provider, the Federal Agency for Cartography and Geodesy (BKG), has named this variable, which stands for "Geofactor" (German: "Geofaktor"). Maybe you can figure out what this category means after plotting the data.
+Do you have an idea why there are 11 observations instead of only 1, even though we expected a shapefile with the polygon of Germany?
+Create a new object (`germany_new)`that contains only one observation filtered by the variable `GF == 4`.
+The data provider, the Federal Agency for Cartography and Geodesy (BKG), has named this variable, which stands for "Geofactor" (German: "Geofaktor").
+Maybe you can figure out what this category means after plotting the data.
 :::
 
 ::: {.callout-caution collapse="true"}
 ## 💡 Tip
 
 You can apply standard `R` procedures to filter data, such as `dplry`'s `filter()` command.
+:::
+
+::: callout-note
+## 🏋 Exercise 4
+
+CRS handling is a common source of errors.
+There are two functions that sound similar but do very different things:
+
+-   `sf::st_set_crs()` — **relabels** the CRS without changing any coordinate values
+-   `sf::st_transform()` — actually **recalculates** the coordinates into a new CRS
+
+Here is a point representing Berlin in geographic coordinates (longitude/latitude, WGS84/EPSG:4326):
+
+```{r}
+#| eval: false
+berlin <- sf::st_sfc(sf::st_point(c(13.405, 52.52)), crs = 4326)
+```
+
+- `germany_new` is stored in EPSG:25832 (a projected CRS, units in metres).
+    Use `sf::st_set_crs()` to *force* `berlin`'s CRS to match `germany_new`'s CRS without transforming.
+    Plot `germany_new` and add this re-labeled point on top
+
+-  Now use `sf::st_transform()` on the *original* `berlin` point to properly convert it to `germany_new`'s CRS, and plot again.
+:::
+
+::: {.callout-caution collapse="true"}
+## 💡 Tip
+
+For Plotting use
+
+```{r}
+#| eval: false
+
+plot(germany_new)
+plot(berlin_wrong, add = TRUE, col = "red", pch = 19, cex = 2)
+```
+
+
 :::
 
 ### Solutions
@@ -109,9 +155,43 @@ names(germany) # Name, Area Type, Area Size, Population Size ,...
 # It seems like the shapefile contains not only Germany's land area but also coastal areas and lakes.
 # filter 
 germany_new <-
-  germany |> 
+  germany |>
   dplyr::filter(GF == 4)
 
 plot(germany_new)
 ```
+:::
+
+::: {.callout-tip collapse="true"}
+## ✅ Solution 4
+
+```{r}
+
+berlin <- sf::st_sfc(sf::st_point(c(13.405, 52.52)), crs = 4326)
+
+# a) Force the (wrong!) CRS of germany_new onto berlin
+berlin_wrong <- sf::st_set_crs(berlin, sf::st_crs(germany_new))
+
+plot(germany_new$geometry)
+plot(berlin_wrong, add = TRUE, col = "red", pch = 19, cex = 2)
+```
+
+
+```{r}
+# b) Properly transform the original berlin point instead
+berlin_correct <- sf::st_transform(berlin, crs=25832)
+
+plot(germany_new$geometry)
+plot(berlin_correct, add = TRUE, col = "red", pch = 19, cex = 2)
+```
+
+
+
+```{r}
+# c) Compare the bounding boxes
+sf::st_bbox(berlin_wrong)
+sf::st_bbox(berlin_correct)
+```
+
+
 :::
