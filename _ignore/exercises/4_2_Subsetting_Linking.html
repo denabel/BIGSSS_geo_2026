@@ -2,11 +2,11 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.9.36">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Stefan Jünger &amp; Dennis Abel">
+<meta name="author" content="Anne-Kathrin Stroppe, Dennis Abel">
 
 <title>Exercise 4_2: Subsetting and Linking</title>
 <style>
@@ -2209,7 +2209,7 @@ vertical-align: -.125em;
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Exercise 4_2: Subsetting and Linking</h1>
-<p class="subtitle lead">Introduction to Geospatial Techniques for Social Scientists in R</p>
+<p class="subtitle lead">Geodata &amp; Spatial Regression</p>
 </div>
 
 
@@ -2219,7 +2219,7 @@ vertical-align: -.125em;
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Stefan Jünger &amp; Dennis Abel </p>
+             <p>Anne-Kathrin Stroppe, Dennis Abel </p>
           </div>
   </div>
     
@@ -2420,13 +2420,7 @@ vertical-align: -.125em;
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Paket &#39;sf&#39; wurde unter R Version 4.4.3 erstellt</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Linking to GEOS 3.13.0, GDAL 3.10.1, PROJ 9.5.1; sf_use_s2() is TRUE</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Paket &#39;dplyr&#39; wurde unter R Version 4.4.3 erstellt</code></pre>
+<pre><code>Linking to GEOS 3.13.1, GDAL 3.11.4, PROJ 9.7.0; sf_use_s2() is TRUE</code></pre>
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>
@@ -2536,39 +2530,39 @@ Projected CRS: ETRS89-extended / LAEA Europe
 <div id="callout-12" class="callout-12-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># filter Cologne</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>cologne <span class="ot">&lt;-</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  german_districts <span class="sc">|&gt;</span> </span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(AGS <span class="sc">==</span> <span class="st">&quot;05315&quot;</span>)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># filter surrounding districts, append with Cologne data and select the charger column</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>cologne_sur <span class="ot">&lt;-</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  german_districts <span class="sc">|&gt;</span> </span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="fu">lengths</span>(sf<span class="sc">::</span><span class="fu">st_touches</span>(german_districts, cologne)) <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(cologne) </span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co"># one pipe to rule them all</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>cologne_sur_enhanced  <span class="ot">&lt;-</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">read_delim</span>(<span class="st">&quot;./data/charging_points_ger.csv&quot;</span>, <span class="at">delim =</span><span class="st">&quot;;&quot;</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(longitude) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(latitude)) <span class="sc">|&gt;</span>  </span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;longitude&quot;</span>, <span class="st">&quot;latitude&quot;</span>), <span class="at">crs =</span> <span class="dv">4326</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="dv">3035</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_join</span>(cologne_sur, <span class="at">join =</span> sf<span class="sc">::</span>st_within) <span class="sc">|&gt;</span> </span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(AGS) <span class="sc">|&gt;</span> </span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">charger_count =</span> dplyr<span class="sc">::</span><span class="fu">n</span>()) <span class="sc">|&gt;</span>  </span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span>  </span>
-<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(cologne_sur, <span class="at">y =</span> _, <span class="at">by =</span> <span class="st">&quot;AGS&quot;</span>) <span class="sc">|&gt;</span>  </span>
-<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
-<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    attributes_districts <span class="sc">|&gt;</span> </span>
-<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">select</span>(AGS, population), </span>
-<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="st">&quot;AGS&quot;</span></span>
-<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
-<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">charger_dens =</span> (charger_count<span class="sc">*</span><span class="dv">1000</span>) <span class="sc">/</span> population)</span>
-<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a><span class="co"># plot  </span></span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>cologne_sur_enhanced <span class="sc">|&gt;</span>  </span>
-<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(charger_count, charger_dens) <span class="sc">|&gt;</span> </span>
-<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># filter Cologne</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>cologne <span class="ot">&lt;-</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  german_districts <span class="sc">|&gt;</span> </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(AGS <span class="sc">==</span> <span class="st">&quot;05315&quot;</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># filter surrounding districts, append with Cologne data and select the charger column</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>cologne_sur <span class="ot">&lt;-</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  german_districts <span class="sc">|&gt;</span> </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="fu">lengths</span>(sf<span class="sc">::</span><span class="fu">st_touches</span>(german_districts, cologne)) <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(cologne) </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># one pipe to rule them all</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>cologne_sur_enhanced  <span class="ot">&lt;-</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  readr<span class="sc">::</span><span class="fu">read_delim</span>(<span class="st">&quot;./data/charging_points_ger.csv&quot;</span>, <span class="at">delim =</span><span class="st">&quot;;&quot;</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(longitude) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.na</span>(latitude)) <span class="sc">|&gt;</span>  </span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_as_sf</span>(<span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;longitude&quot;</span>, <span class="st">&quot;latitude&quot;</span>), <span class="at">crs =</span> <span class="dv">4326</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="dv">3035</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_join</span>(cologne_sur, <span class="at">join =</span> sf<span class="sc">::</span>st_within) <span class="sc">|&gt;</span> </span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(AGS) <span class="sc">|&gt;</span> </span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">charger_count =</span> dplyr<span class="sc">::</span><span class="fu">n</span>()) <span class="sc">|&gt;</span>  </span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span>  </span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(cologne_sur, <span class="at">y =</span> _, <span class="at">by =</span> <span class="st">&quot;AGS&quot;</span>) <span class="sc">|&gt;</span>  </span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    attributes_districts <span class="sc">|&gt;</span> </span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>      dplyr<span class="sc">::</span><span class="fu">select</span>(AGS, population), </span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="st">&quot;AGS&quot;</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">charger_dens =</span> (charger_count<span class="sc">*</span><span class="dv">1000</span>) <span class="sc">/</span> population)</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="co"># plot  </span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>cologne_sur_enhanced <span class="sc">|&gt;</span>  </span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(charger_count, charger_dens) <span class="sc">|&gt;</span> </span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stderr">
@@ -2611,10 +2605,10 @@ dbl (4): latitude, longitude, power_kw, num_plugs
 <div id="callout-13" class="callout-13-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>cologne_50_points <span class="ot">&lt;-</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  cologne <span class="sc">|&gt;</span>  </span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_sample</span>(<span class="dv">50</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_as_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>cologne_50_points <span class="ot">&lt;-</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  cologne <span class="sc">|&gt;</span>  </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_sample</span>(<span class="dv">50</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  sf<span class="sc">::</span><span class="fu">st_as_sf</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -2632,90 +2626,87 @@ dbl (4): latitude, longitude, power_kw, num_plugs
 <div id="callout-14" class="callout-14-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(terra)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># load all layers</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>citizens_cologne <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;./data/citizens_cologne.tif&quot;</span>)</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>inhabitants_cologne <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;./data/inhabitants_cologne.tif&quot;</span>)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># define missing values</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>citizens_cologne[citizens_cologne <span class="sc">==</span> <span class="sc">-</span><span class="dv">9</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>inhabitants_cologne[inhabitants_cologne <span class="sc">==</span> <span class="sc">-</span><span class="dv">9</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co"># create immigrants layer</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>immigrants_cologne <span class="ot">&lt;-</span> inhabitants_cologne <span class="sc">-</span> citizens_cologne</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co"># something&#39;s off - let&#39;s get rid of the wierd negative numbers</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>immigrants_cologne[immigrants_cologne <span class="sc">&lt;</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>immigrant_rates <span class="ot">&lt;-</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  immigrants_cologne <span class="sc">*</span> <span class="dv">100</span> <span class="sc">/</span> inhabitants_cologne</span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>immigrant_rates_at_point <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">extract</span>(immigrant_rates, cologne_50_points)</span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>immigrant_rates_at_point</span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a><span class="co"># There are a lot of missing values.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(terra)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># load all layers</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>citizens_cologne <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;./data/citizens_cologne.tif&quot;</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>inhabitants_cologne <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="st">&quot;./data/inhabitants_cologne.tif&quot;</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># define missing values</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>citizens_cologne[citizens_cologne <span class="sc">==</span> <span class="sc">-</span><span class="dv">9</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>inhabitants_cologne[inhabitants_cologne <span class="sc">==</span> <span class="sc">-</span><span class="dv">9</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># create immigrants layer</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>immigrants_cologne <span class="ot">&lt;-</span> inhabitants_cologne <span class="sc">-</span> citizens_cologne</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co"># something&#39;s off - let&#39;s get rid of the wierd negative numbers</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>immigrants_cologne[immigrants_cologne <span class="sc">&lt;</span> <span class="dv">0</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>immigrant_rates <span class="ot">&lt;-</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  immigrants_cologne <span class="sc">*</span> <span class="dv">100</span> <span class="sc">/</span> inhabitants_cologne</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>immigrant_rates_at_point <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">extract</span>(immigrant_rates, cologne_50_points)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>immigrant_rates_at_point</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="co"># There are a lot of missing values.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stderr">
-<pre><code>Warning: Paket &#39;terra&#39; wurde unter R Version 4.4.3 erstellt</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>terra 1.9.11</code></pre>
+<pre><code>terra 1.8.86</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>   ID     cat_0
-1   1 57.142857
-2   2 20.869565
-3   3 43.589744
-4   4        NA
-5   5        NA
-6   6        NA
-7   7        NA
-8   8        NA
-9   9 20.512821
-10 10        NA
-11 11 48.666667
-12 12        NA
-13 13        NA
-14 14        NA
-15 15 63.513514
-16 16 15.384615
-17 17        NA
-18 18        NA
-19 19        NA
-20 20        NA
-21 21 21.072797
-22 22        NA
-23 23        NA
-24 24 47.619048
-25 25        NA
-26 26 14.545455
-27 27        NA
-28 28        NA
-29 29        NA
-30 30        NA
-31 31        NA
-32 32 18.439716
-33 33 23.529412
-34 34        NA
-35 35 20.754717
-36 36        NA
-37 37 12.068966
-38 38        NA
-39 39        NA
-40 40  9.756098
-41 41 19.444444
-42 42 51.020408
-43 43        NA
-44 44        NA
-45 45        NA
-46 46        NA
-47 47        NA
-48 48 22.222222
-49 49        NA
-50 50        NA</code></pre>
+<pre><code>   ID    cat_0
+1   1       NA
+2   2       NA
+3   3       NA
+4   4 30.24691
+5   5       NA
+6   6       NA
+7   7       NA
+8   8 33.05085
+9   9       NA
+10 10       NA
+11 11       NA
+12 12       NA
+13 13       NA
+14 14       NA
+15 15 27.03704
+16 16       NA
+17 17       NA
+18 18 43.47826
+19 19       NA
+20 20 18.13472
+21 21       NA
+22 22  0.00000
+23 23 26.15385
+24 24       NA
+25 25       NA
+26 26       NA
+27 27 34.06593
+28 28  0.00000
+29 29       NA
+30 30       NA
+31 31       NA
+32 32       NA
+33 33       NA
+34 34       NA
+35 35       NA
+36 36       NA
+37 37       NA
+38 38       NA
+39 39       NA
+40 40       NA
+41 41       NA
+42 42       NA
+43 43 19.14894
+44 44       NA
+45 45       NA
+46 46 12.12121
+47 47 20.00000
+48 48       NA
+49 49 42.85714
+50 50       NA</code></pre>
 </div>
 </div>
 </div>
@@ -2734,67 +2725,67 @@ dbl (4): latitude, longitude, power_kw, num_plugs
 <div id="callout-15" class="callout-15-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>immigrant_rates_1000m_buffer <span class="ot">&lt;-</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  terra<span class="sc">::</span><span class="fu">extract</span>(</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    immigrant_rates, </span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_buffer</span>(cologne_50_points, <span class="dv">1000</span>), </span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">fun =</span> mean,</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>immigrant_rates_1000m_buffer</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>immigrant_rates_1000m_buffer <span class="ot">&lt;-</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  terra<span class="sc">::</span><span class="fu">extract</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    immigrant_rates, </span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    sf<span class="sc">::</span><span class="fu">st_buffer</span>(cologne_50_points, <span class="dv">1000</span>), </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">fun =</span> mean,</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>immigrant_rates_1000m_buffer</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   ID    cat_0
-1   1 23.89633
-2   2 26.99151
-3   3 24.74833
-4   4 23.93386
-5   5 29.13051
-6   6 17.04614
-7   7 20.35059
-8   8 34.61046
-9   9 28.30252
-10 10 20.68858
-11 11 26.36429
-12 12 22.10383
-13 13 33.33333
-14 14 29.70576
-15 15 31.79816
-16 16 29.09181
-17 17 28.00210
-18 18 12.51894
-19 19 22.56886
-20 20 23.98581
-21 21 22.86830
-22 22 32.56351
-23 23 23.39827
-24 24 26.43435
-25 25 22.81005
-26 26 22.45830
-27 27 31.10686
-28 28 25.40024
-29 29 19.27193
-30 30 29.33389
-31 31  0.00000
-32 32 22.85417
-33 33 24.00638
-34 34 23.62727
-35 35 31.72377
-36 36 19.91084
-37 37 24.96999
-38 38 30.36571
-39 39 28.74568
-40 40 22.41471
-41 41 27.09108
-42 42 42.21840
-43 43 28.23864
-44 44 27.05159
-45 45 25.47683
-46 46 34.39369
-47 47 28.31016
-48 48 24.73430
-49 49 38.12571
-50 50 35.44514</code></pre>
+1   1 29.87838
+2   2 25.44694
+3   3 23.64060
+4   4 31.14848
+5   5 32.38442
+6   6 28.22320
+7   7      NaN
+8   8 31.31369
+9   9 24.20341
+10 10 23.32273
+11 11 26.32982
+12 12 22.67897
+13 13 23.77968
+14 14 28.15292
+15 15 22.14794
+16 16 25.21437
+17 17 20.39318
+18 18 25.57792
+19 19 27.81327
+20 20 30.23219
+21 21 24.48036
+22 22 37.98105
+23 23 25.96558
+24 24 27.39981
+25 25      NaN
+26 26 23.96579
+27 27 29.50669
+28 28 27.61964
+29 29 29.96661
+30 30 31.30313
+31 31 39.96158
+32 32 25.88369
+33 33 45.11371
+34 34      NaN
+35 35 24.77015
+36 36 22.97214
+37 37 19.85765
+38 38 25.89315
+39 39 30.08146
+40 40 32.55147
+41 41  0.00000
+42 42 30.70216
+43 43 25.75246
+44 44 45.36326
+45 45 25.21734
+46 46 23.62375
+47 47 25.22337
+48 48 28.57143
+49 49 26.53821
+50 50 21.51003</code></pre>
 </div>
 </div>
 </div>

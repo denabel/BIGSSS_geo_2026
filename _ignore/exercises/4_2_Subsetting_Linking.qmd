@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 4_2: Subsetting and Linking"
 subtitle: 'Geodata & Spatial Regression'
 author: "Anne-Kathrin Stroppe, Dennis Abel"
