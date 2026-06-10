@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Introduction"
 subtitle: "Geodata & Spatial Regression"
 author: "Anne Stroppe & Dennis Abel"
@@ -56,25 +56,6 @@ We will show the use of packages we exploit in practice
 
 ::: {.column width="60%"}
 ![](../img/rstudio-shop.jpg){fig-align="center" width="60%"}
-:::
-:::::
-
-## About us (Stefan)
-
-::::: columns
-::: {.column width="40%"}
-![](../img/Stefan.png){fig-align="center" width="60%"}
-:::
-
-::: {.column width="60%"}
--   Senior Researcher in the team Survey Data Augmentation at the GESIS department Survey Data Curation
--   Ph.D. in Social Sciences, University of Cologne
--   Research interests:
-    -   Quantitative methods, Geographic Information Systems (GIS)
-    -   Social inequalities
-    -   Attitudes towards minorities
-    -   Environmental attitudes
-    -   Reproducible research
 :::
 :::::
 
@@ -676,4 +657,4 @@ Let's learn about geospatial data as we learn about specific formats
 
 ## Exercise 1: Package Installation
 
-[Exercise](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/1_Package_Installation.html)
+[Exercise](https://denabel.github.io/BIGSSS_geo_2026/exercises/1_Package_Installation.html)

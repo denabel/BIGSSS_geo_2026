@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 1: Package Installation"
 subtitle: 'Geodata & Spatial Regression'
 author: Anne Stroppe & Dennis Abel
@@ -39,6 +39,8 @@ That's it. Please notify us if there are any issues with installing the packages
 ## `r emo::ji("weight_lifting_man")` Exercise 2
 
 Visit the website <https://thetruesize.com/> and check out how the (projected) sizes of countries can change depending on their location.
+
+Find out why projections are political - check out the "Equal Earth projection" developed by researchers from ESRI, US National Park Service and Monash University <https://equal-earth.com/equal-earth-projection.html>. This projection is advocated by campaigns such as "Correct the Map" <https://correctthemap.org/> which lobbies for a more equal representation of the Global South.
 :::
 
 ### Solutions
@@ -97,6 +99,12 @@ easypackages::packages(
 )
 
 
+# German Census data
+easypackages::packages(
+  "z22", 
+  "ffm"
+)
+
 # --- Non-CRAN Packages --------------------------------------------------------
 # These packages are hosted on GitHub or GESIS GitLab.
 # Install 'pak' first if not already available.
@@ -105,10 +113,7 @@ if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")
 
 pak::pkg_install(c(
   "StefanJuenger/bkggeocoder",                          # Offline geocoding (BKG), developed at GESIS
-  "StefanJuenger/z11",                                  # German Census 2011 grid data
-  "jslth/z22",                                          # German Census 2022 grid data
-  "jslth/ffm",                                          # BKG administrative boundaries archive
-  "git::https://git.gesis.org/sora-service/sora.git"    # GESIS survey data access 
+  "StefanJuenger/z11"                                  # German Census 2011 grid data
 ))
 
 ```
