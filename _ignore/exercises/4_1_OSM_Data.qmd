@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Exercise 4_1: OSM Data"
 subtitle: 'Geodata & Spatial Regression'
 author: "Anne-Kathrin Stroppe, Dennis Abel"
@@ -99,6 +99,8 @@ ruegen <-
 ## `r emo::ji("white_check_mark")` Solution 3
 
 ```{r}
+osmdata::set_overpass_url("https://overpass-api.de/api/interpreter")
+
 ruegen <-
   osmdata::getbb("Rügen") |>  
   osmdata::opq(timeout = 25) |> 
