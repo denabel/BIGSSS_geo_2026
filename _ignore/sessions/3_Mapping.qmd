@@ -71,19 +71,10 @@ attributes_cologne <- sf::read_sf("./data/attributes_cologne.shp")
 plot(attributes_cologne["ecar"])
 ```
 
-## What makes a good map?
+## What makes a bad map?
 
 :::: columns
 ::: {.column width="50%"}
-**Good Mapping**
-
-- Reduction to most important information
-- Legends, scales, descriptions
-- Audience oriented
-- Adjusted for color vision deficiencies
-:::
-
-::: {.column .fragment width="50%"}
 **Bad Mapping**
 
 - Overcrowding and overlapping
@@ -91,24 +82,32 @@ plot(attributes_cologne["ecar"])
 - Missing information like the legend or source
 - Poor choice of color palettes
 :::
+
+::: {.column width="50%"}
+
+<br>
+<br>
+
+![](../img/kermit-map.gif){.r-stretch fig-align="center"}
+
+:::
 ::::
 
 ## What makes a good map?
 
 :::: columns
 ::: {.column width="50%"}
-![](https://media.giphy.com/media/C9x8gX02SnMIoAClXa/giphy-downsized-large.gif){fig-align="left" width="40%"}
+![](https://media.giphy.com/media/C9x8gX02SnMIoAClXa/giphy-downsized-large.gif){fig-align="center" width="60%"}
 
 <small>[Source](https://media.giphy.com/media/C9x8gX02SnMIoAClXa/giphy-downsized-large.gif)</small>
 :::
 
 ::: {.column width="50%"}
-... but there is one other type:
-
-**The fast but nice map.**
-
 - Fast exploration of spatial data by visualizing the geometries and attributes
-- Might not be publication-ready yet, but they are more rewarding than just plotting information
+- clear visual hierarchy
+- limiting unnecessary elements
+- choosing appropriate color schemes and fonts
+- purpose and audience of the map should guide its layout
 :::
 ::::
 
@@ -120,12 +119,15 @@ plot(attributes_cologne["ecar"])
 - Mobile-friendly interactive maps: [`leaflet`](https://rstudio.github.io/leaflet/)
 - Interactive and static thematic maps: [`tmap`](https://r-tmap.github.io/tmap/), [`mapview`](https://r-spatial.github.io/mapview/)
 
+::: {.fragment}
+
 Today, we concentrate on [`ggplot2`](https://cran.r-project.org/web/packages/ggplot2/index.html):
 
 - Part of the `tidyverse` — draws on knowledge many of you already have
 - Maximum flexibility for customizing every element
 - Seamlessly combines maps with other plots in one figure
 - Integrates with many extension packages (`tidyterra`, `ggspatial`, ...)
+:::
 
 ## What is `ggplot2`?
 
