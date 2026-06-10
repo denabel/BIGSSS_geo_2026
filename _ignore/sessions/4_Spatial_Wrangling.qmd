@@ -224,8 +224,10 @@ cologne_pt_stops
 The data is finally downloaded in the `osmdata` package, e.g., using the `osmdata::osmdata_sf()` function.
 
 ```{r}
-#| code-line-numbers: "1,5,7"
+#| code-line-numbers: "3,7,9"
 #| output-location: fragment
+osmdata::set_overpass_url("https://overpass-api.de/api/interpreter")
+
 cologne_pt_stops <-
   osmdata::getbb("Köln") |> 
   osmdata::opq(timeout = 25) |> 
@@ -240,8 +242,10 @@ cologne_pt_stops
 The data comprises a list that can be accessed like any other list in `R`. Here, we extract the points and wrangle them (spatially).
 
 ```{r}
-#| code-line-numbers: "1,6,7,9"
+#| code-line-numbers: "3,9,10,12"
 #| output-location: fragment
+osmdata::set_overpass_url("https://overpass-api.de/api/interpreter")
+
 cologne_pt_stops <-
   osmdata::getbb("Köln") |> 
   osmdata::opq(timeout = 25*100) |> 
@@ -279,7 +283,7 @@ We use `ecmwfr` for our interface to EOD linking in our `R` package [`gxc`](http
 
 ## Exercise 4_1: OSM Data💪 {.center style="text-align: center;"}
 
-🖱\[Click here for the exercise\](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/4_1_OSM_Data.html)
+🖱\[Click here for the exercise\](https://denabel.github.io/BIGSSS_geo_2026/exercises/4_1_OSM_Data.html)
 
 ## 2. Linking {.center style="text-align: center;"}
 
@@ -680,7 +684,7 @@ cologne_touch_points <- lengths(cologne_touch_points)
 cologne_touch_points
 
 # Length of mutual border > 0
-cologne_touch_points <- lengths(cologne_touch_points) > 0
+cologne_touch_points <- cologne_touch_points > 0
 
 cologne_touch_points
 ```
@@ -1056,7 +1060,7 @@ plot(german_states["geometry"])
 
 ## Exercise 4_2: Subsetting and Linking💪 {.center style="text-align: center;"}
 
-🖱[Click here for the exercise](https://stefanjuenger.github.io/gesis-workshop-geospatial-techniques-R-2026/exercises/4_2_Subsetting_Linking.html)
+🖱[Click here for the exercise](https://denabel.github.io/BIGSSS_geo_2026/exercises/4_2_Subsetting_Linking.html)
 
 ## Backup / For Home Use {.center style="text-align: center;"}
 
