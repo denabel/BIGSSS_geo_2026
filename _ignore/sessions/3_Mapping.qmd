@@ -19,6 +19,8 @@ knitr:
   opts_chunk: 
     R.options:
       width: 120
+  opts_knit: 
+    root.dir: ../../
 ---
 
 ```{r}
@@ -44,7 +46,7 @@ library(tmap)
 
 ```{r}
 #| echo: false
-source("./course_content.R") 
+source("./_ignore/sessions/course_content.R")
 
 course_content |> 
   kableExtra::row_spec(5, background = "yellow") |> 
@@ -64,7 +66,7 @@ course_content |>
 
 ```{r}
 #| echo: false
-attributes_cologne <- sf::read_sf("../../data/attributes_cologne.shp")
+attributes_cologne <- sf::read_sf("./data/attributes_cologne.shp")
 
 plot(attributes_cologne["ecar"])
 ```
@@ -184,9 +186,9 @@ immigrants_cologne <- terra::rast("./data/immigrants_cologne.tif")
 
 ```{r}
 #| echo: false
-attributes_cologne  <- sf::read_sf("../../data/attributes_cologne.shp")
-charger_cologne     <- sf::read_sf("../../data/charger_cologne.shp")
-immigrants_cologne  <- terra::rast("../../data/immigrants_cologne.tif")
+attributes_cologne  <- sf::read_sf("./data/attributes_cologne.shp")
+charger_cologne     <- sf::read_sf("./data/charger_cologne.shp")
+immigrants_cologne  <- terra::rast("./data/immigrants_cologne.tif")
 
 # Bandname umbenennen
 names(immigrants_cologne) <- "immigrants_cologne"
