@@ -1,8 +1,8 @@
 ---
 title: "Exercise 5_1: Geocoding & Proximity"
 subtitle: 'Geodata & Spatial Regression'
-author: Anne-Kathrin Stroppe & Dennis Abel
-format: 
+author: Anne Stroppe & Dennis Abel
+format:
   html:
     embed-resources: true
     code-copy: true
@@ -11,7 +11,7 @@ execute:
 editor: visual
 callout-icon: false
 callout-appearance: minimal
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -20,11 +20,11 @@ editor_options:
 ::: callout-note
 ## `r emo::ji("weight_lifting_man")` Exercise 1: Geocoding
 
-Load a number of hospitals from the hospital registry (`./data/krankenhausverzeichnis.xlsx`) or choose any other list of adresses.
+Load a number of hospitals from the hospital registry (`./data/krankenhausverzeichnis.xlsx`) or choose any other list of addresses.
 
-1.  Geocode a set of adresses using `tidygeocoder::geocode()` with `method = "osm"`. How many were matched successfully?
-3.  Convert the result to an `sf` point layer (CRS 4326), then transform to CRS 3035.
-4.  Map the geocoded hospitals .
+1.  Geocode a set of addresses using `tidygeocoder::geocode()` with `method = "osm"`. How many were matched successfully?
+2.  Convert the result to an `sf` point layer (CRS 4326), then transform to CRS 3035.
+3.  Map the geocoded hospitals.
 :::
 
 ::: {.callout-caution collapse="true"}
@@ -34,25 +34,20 @@ Load a number of hospitals from the hospital registry (`./data/krankenhausverzei
 #| eval: false
 
 # load hospital data
-hospitals_cologne <- readxl::read_excel("data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |> 
+hospitals_cologne <- readxl::read_excel("data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |>
   dplyr::select(1:2,4:9) |>
-  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |> 
-  dplyr::mutate(address = paste(strasse, hausnr, plz, ort, "Germany"))   |> 
-  # filter bei 
-  dplyr::filter(grepl("K.ln", ort, ignore.case = TRUE)) 
-
+  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |>
+  dplyr::mutate(address = paste(street, housenumber, zip, place, "Germany")) 
 ```
-
 :::
 
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip 2
 
-Use `sf::st_as_sf(coords = c("long", "lat"), crs = 4326)` to convert. Note the order: longitude first, then latitude.
+Use `sf::st_as_sf(coords = c("long", "lat"), crs = 4326)` to convert.
+Note the order: longitude first, then latitude.
 Check for `NA` coordinates before converting with `dplyr::filter(!is.na(long))`.
 :::
-
-
 
 :::: callout-note
 ## `r emo::ji("weight_lifting_man")` Exercise 2: Distance & Nearest Neighbour
@@ -63,18 +58,17 @@ Map the result.
 **Choose your point dataset — pick whichever fits your interests:**
 
 ::: panel-tabset
-### 🏥 Option A: Hospitals (from Exercise 0)
+### Option A: Hospitals (from Exercise 1)
 
 Use the hospitals you already geocoded.
-This continues naturally from Exercise 0.
 
 ```{r}
 #| eval: false
-# Use the hospitals_sf object from Exercise 0
+# Use the hospitals_sf object from Exercise 1
 hospitals_sf_3035 <- sf::st_transform(hospitals_sf, 3035)
 ```
 
-### 🚉 Option B: NRW train stops (pre-loaded)
+### Option B: NRW train stops (data folder)
 
 Use the train stop data already in the `./data` folder.
 Note: CRS is missing — set it manually.
@@ -86,7 +80,7 @@ train_stops <- sf::read_sf("./data/nrw_pt_osmtrainstops.shp") |>
   sf::st_transform(3035)   # coordinates already in LAEA Europe
 ```
 
-### 🗺️ Option C: Your own OSM feature
+###  Option C: Your own OSM feature
 
 Query any feature from OpenStreetMap using the `osmdata` package (as in Session 4).
 Examples: pharmacies, schools, supermarkets, parks, bus stops.
@@ -107,13 +101,19 @@ your_features <- osmdata::getbb("Köln") |>
 ```
 :::
 
+::::
+
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip
+
 **Steps for all options:**
 
 1.  Load `Stimmbezirk.shp`, set CRS to 3035, compute centroids with `sf::st_centroid()`
 2.  Find the nearest feature for each centroid using `sf::st_nearest_feature()`
 3.  Compute distances with `sf::st_distance(..., by_element = TRUE)`
-4.  Map the result — which precincts have the worst access?
-::::
+4.  Map the result: Which precincts have the worst access?
+:::
 
 ::: {.callout-caution collapse="true"}
 ## `r emo::ji("bulb")` Tip
@@ -123,204 +123,75 @@ Use that index to subset your point layer before calling `st_distance(..., by_el
 Convert the result to numeric metres with `as.numeric()`.
 :::
 
-::: {.callout-tip collapse="true"}
-## `r emo::ji("white_check_mark")` Solution (Option A: hospitals)
-
-```{r}
-library(sf); library(dplyr); library(tmap)
-
-# Voting precincts
-stimmbezirke <- sf::read_sf("../../data/Stimmbezirk.shp") |>
-  sf::st_set_crs(25832) |>
-  sf::st_transform(3035)
-
-stimmbezirk_centroids <- sf::st_centroid(stimmbezirke)
-
-# Point layer (hospitals from Exercise 0 — already in environment)
-hospitals_sf_3035 <- sf::st_transform(hospitals_sf, 3035)
-
-# Nearest feature index
-nearest_idx <- sf::st_nearest_feature(stimmbezirk_centroids, hospitals_sf_3035)
-
-# Distance to nearest hospital
-stimmbezirke$dist_hospital_m <- as.numeric(
-  sf::st_distance(
-    stimmbezirk_centroids,
-    hospitals_sf_3035[nearest_idx, ],
-    by_element = TRUE
-  )
-)
-
-# Map
-tm_shape(stimmbezirke) +
-  tm_polygons(
-    fill = "dist_hospital_m",
-    fill.legend = tm_legend(title = "Distance to nearest\nhospital (m)"),
-    fill.scale  = tm_scale_intervals(style = "quantile", n = 5, values = "viridis"),
-    col = NA
-  )
-```
-:::
 
 ::: callout-note
-## `r emo::ji("weight_lifting_man")` Exercise 2
+## `r emo::ji("weight_lifting_man")` Exercise 3: Buffers & Hospital Coverage
 
-We may not always rely on georeferenced data collected in the whole area of a country.
-Thus, when exploiting geospatial data for linking, one exercise is to subset the data.
-This could be a subset of the charging station data used in the lecture.
-Let's say we conducted a survey in the German federal state North-Rhine Westphalia (NRW).
+So far, we have measured hospital accessibility as the straight-line distance from each polling district's centroid to the nearest hospital. This is a useful first approximation but how convincing is it really?
+Consider what a centroid represents: a single point summarising an entire area. A polling district might have its centroid close to a hospital, yet most of its residents could live at the far end of the district, far from any facility. 
+The centroid distance measure implicitly assumes that all residents live at that one point but this assumption becomes increasingly problematic as districts grow larger or more irregularly shaped.
 
-Subset the charger data file yourself by relying on the spatial information of the file `charging_points_ger.csv` and a polygon of NRW.
-There are two ways to achieve this.
-How many chargers are located within NRW?
+Instead, we are interes in the question: **What share of each polling district's population lives within reach of a hospital?**
+
+In Session 4, we used `sf::st_buffer()` to create circular buffers around points and `terra::extract()` to summarize raster values within them.
+Let's apply the same idea here: instead of measuring *distance* to the nearest hospital.
+
+::: panel-tabset
+# Workflow
+
+1.  Create a 1,000m buffer around each hospital in `hospitals_sf` using `sf::st_buffer()`.
+2.  Intersect the Cologne `stimmbezirke` (from Exercise 2) with these buffers to get the part of each precinct that lies within 1,000m of a hospital.
+3.  Load `./data/inhabitants_cologne.tif` and use `terra::extract()` to get (a) the total population per Stimmbezirk and (b) the population within the "covered" part(s).
+4.  Compute the share (in %) of each Stimmbezirk's population that lives within 1,000m of a hospital, and map the result.
+:::
 :::
 
 ::: {.callout-caution collapse="true"}
-## `r emo::ji("bulb")` Tip
-
-You need two datasets for that: the point layer `charging_points_ger.csv` (remember to adjust the crs) in the `./data` folder and polygons of NRW.
-For the latter, you can again use the `osmdata` syntax or one of the shapefiles in the `./data/folder` you filter for NRW.
-:::
-
-::: {.callout-caution collapse="true"}
-## `r emo::ji("bulb")` Tip
-
-You can explore two functions: `sf::st_join` and `sf::st_intersection()`.
-The default of `sf::st_join()` will leave you with a 'left-join' and returns a data object with all chargers and matching district information for those located within NRW.
-You can reset the option to perform an 'inner-join' and keep only the observation that lay within the predefined area (`sf::st_join(x , y, join  = "", left = FALSE)`).
-:::
-
-::: callout-note
-## `r emo::ji("weight_lifting_man")` Exercise 3
-
-Did the operationalization of charger accessibility convince you?
-There may be other ways, such as the proportion of residents with max.
-1000 m linear distance to the nearest charger.
-
-You may not know this, but we have everything we need to create this indicator on a smaller scale as well: charger data, Census data, and our synthetic georeferenced data!
-So, what is the mean share of residents with max.
-1000m linear distance to the nearest train station in a 5km neighborhood of our fake respondents?
-
-You can run the code below to load all the data you need.
-:::
+## `r emo::ji("bulb")` Tip 1
 
 ```{r}
 #| eval: false
-#| message: false
-#| warning: false
-# packages
-library(dplyr)
-library(osmdata)
-library(sf)
-library(terra)
 
-# load charger
-charger_ger <- 
-  # Read charging station points datae
-  readr::read_delim("./data/charging_points_ger.csv", delim = ";") |> 
-  # Filter out rows with missing longitude or latitude
-  dplyr::filter(!is.na(longitude) & !is.na(latitude)) |> 
-  # Convert data frame to sf object
-  sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
-
-# nrw polygon
-nrw <-
-  osmdata::getbb(
-    "Nordrhein-Westfalen", 
-    format_out = "sf_polygon"
-  ) |>  
-  _$multipolygon
-
-# charger nrw
-charger_nrw <- 
-  charger_ger |> 
-  # Subset point data to sampling area
-  sf::st_intersection(nrw)
-
-# Census data
-census_inhabitants <- terra::rast("./data/census_inhabitants.tiff") 
-
-# crs transformations
-nrw <- sf::st_transform(nrw, 3035)
-charger_nrw <- sf::st_transform(charger_nrw, 3035)
-
-# Synthetic georeferenced data
-synthetic_data <- 
-  readRDS("./data/synthetic_survey_coordinates.rds") |> 
-  sf::st_intersection(nrw)
+hospital_buffers <- sf::st_buffer(hospitals_sf, dist = 1000)
 ```
-
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-# packages
-library(dplyr)
-library(osmdata)
-library(sf)
-library(terra)
-
-# load charger
-charger_ger <- 
-  # Read charging station points datae
-  readr::read_delim("../../data/charging_points_ger.csv", delim = ";") |> 
-  # Filter out rows with missing longitude or latitude
-  dplyr::filter(!is.na(longitude) & !is.na(latitude)) |> 
-  # Convert data frame to sf object
-  sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
-
-# nrw polygon
-nrw <-
-  osmdata::getbb(
-    "Nordrhein-Westfalen", 
-    format_out = "sf_polygon"
-  ) |>  
-  _$multipolygon
-
-# charger nrw
-charger_nrw <- 
-  charger_ger |> 
-  # Subset point data to sampling area
-  sf::st_intersection(nrw)
-
-# Census data
-census_inhabitants <- terra::rast("../../data/census_inhabitants.tiff")
-
-# crs transformations
-nrw <- sf::st_transform(nrw, 3035)
-charger_nrw <- sf::st_transform(charger_nrw, 3035)
-
-# Synthetic georeferenced data
-synthetic_data <- 
-  readRDS("../../data/synthetic_survey_coordinates.rds") |> 
-  sf::st_intersection(nrw)
-```
-
-::: {.callout-caution collapse="true"}
-## `r emo::ji("bulb")` Tip
-
-As always, there are several ways to do this.
-We suggest the following steps:
-
-1.  Create a point layer with the centroids of all grids in NRW based on the census population layer.
-
-2.  Calculate the distance to the next charger station for each grid.
-
-3.  Create a column that equals 0 if the distance to the next charger is \>1000m and contains the number of inhabitants if \<1000.
-
-4.  Rasterize the sf data object to receive two raster objects: number of inhabitants and number of inhabitants with a max 1000m distance to the next train station.
-
-5.  Calculate the mean for the 5km buffer for each "respondent" for each raster.
-
-6.  Calculate the share.
 :::
 
 ::: {.callout-caution collapse="true"}
-## `r emo::ji("bulb")` Tip
+## `r emo::ji("bulb")` Tip 2
 
-In the add-on slides of the spatial wrangling session, we introduced and gave some information on how to transform the raster to points (and back).
-To get a `sf` point layer for the raster object, you can use `terra::as.points() |> sf::st_as_sf()`.
-To rasterize the object, you can use `terra::rasterize(input_points, target_raster, input_raster, field = "target_variable", fun = "mean", background = 0)`.
+`sf::st_intersection(x, y)` returns only the parts of `x`'s geometries that overlap with `y`, keeping `x`'s attributes — unlike `sf::st_join()`, the geometries themselves get cut.
+
+```{r}
+#| eval: false
+stimmbezirke_covered <- sf::st_intersection(stimmbezirke, hospital_buffers)
+```
+
+Reminder: If a Stimmbezirk overlaps more than one hospital buffer, it appears as multiple rows in the result.
+
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip 3
+
+`terra::extract(raster, polygons, fun = sum, na.rm = TRUE)` returns a data frame with an `ID` column and one value column. Use the second column (`[, 2]`).
+
+The raster uses `-9` as a placeholder for missing values; replace it with `NA` first:
+
+```{r}
+#| eval: false
+inhabitants_cologne <- terra::rast("./data/inhabitants_cologne.tif") |>
+  terra::subst(from = -9, to = NA)
+```
+
+Make sure `stimmbezirke` and `hospital_buffers` are transformed to the raster's CRS (`terra::crs(inhabitants_cologne)`) before extracting.
+:::
+
+::: {.callout-caution collapse="true"}
+## `r emo::ji("bulb")` Tip 4
+
+Some Stimmbezirke won't overlap any hospital buffer and will be missing from `stimmbezirke_covered`.
+After summing the covered population per `nummer` and joining it back to `stimmbezirke`, set missing values to 0 with `tidyr::replace_na(0)`.
+If a Stimmbezirk overlaps several buffers, sum its covered population across the resulting rows first and cap the resulting share at 100% with `pmin()`, just in case.
 :::
 
 ### Solutions
@@ -340,16 +211,17 @@ library(tmap)
 
 
 # Load address data
-bremen_hospitals <- readxl::read_excel("./data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |> 
+hospitals_cologne <- readxl::read_excel("./data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |>
   dplyr::select(1:2,4:9) |>
-  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |> 
-  # filter bei 
-  dplyr::filter(state==04)  
+  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |>
+  dplyr::mutate(address = paste(street, housenumber, zip, place, "Germany")) |>
+  # filter to Cologne
+  dplyr::filter(grepl("K.ln", place, ignore.case = TRUE))
 
 
 # Geocode
-hospitals_geocoded <- bremen_hospitals |>
-  tidygeocoder::geocode(address = address, 
+hospitals_geocoded <- hospitals_cologne |>
+  tidygeocoder::geocode(address = address,
                         method = "osm")
 
 cat("Matched:", sum(!is.na(hospitals_geocoded$lat)), "/", nrow(hospitals_geocoded), "\n")
@@ -361,17 +233,16 @@ hospitals_sf <- hospitals_geocoded |>
   sf::st_transform(3035)
 
 # Map
-bremen <- sf::read_sf("../../data/VG250_KRS.shp") |>
-  dplyr::filter(GEN == "Bremen") |>
+cologne_outline <- sf::read_sf("./data/VG250_KRS.shp") |>
+  dplyr::filter(GEN == "Köln") |>
   sf::st_transform(3035)
 
-tm_shape(bremen) +
+tm_shape(cologne_outline) +
   tm_polygons(col = "lightgrey") +
   tm_shape(hospitals_sf) +
   tm_dots(col = "#440154FF", size = 0.3) +
   tm_text("name", size = 0.4, ymod = 0.5)
 ```
-
 
 ```{r}
 #| echo: false
@@ -387,16 +258,17 @@ library(tmap)
 
 
 # Load address data
-bremen_hospitals <- readxl::read_excel("../../data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |> 
+hospitals_cologne <- readxl::read_excel("../../data/krankenhausverzeichnis.xlsx", sheet = 5, skip = 2, col_names=TRUE) |>
   dplyr::select(1:2,4:9) |>
-  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |> 
-  # filter bei 
-  dplyr::filter(state==04)  
+  setNames(c("state", "district", "name", "name2", "street", "housenumber", "zip", "place")) |>
+  dplyr::mutate(address = paste(street, housenumber, zip, place, "Germany")) |>
+  # filter to Cologne
+  dplyr::filter(grepl("K.ln", place, ignore.case = TRUE))
 
 
 # Geocode
-hospitals_geocoded <- bremen_hospitals |>
-  tidygeocoder::geocode(address = address, 
+hospitals_geocoded <- hospitals_cologne |>
+  tidygeocoder::geocode(address = address,
                         method = "osm")
 
 cat("Matched:", sum(!is.na(hospitals_geocoded$lat)), "/", nrow(hospitals_geocoded), "\n")
@@ -408,11 +280,11 @@ hospitals_sf <- hospitals_geocoded |>
   sf::st_transform(3035)
 
 # Map
-bremen <- sf::read_sf("../../data/VG250_KRS.shp") |>
-  dplyr::filter(GEN == "Bremen") |>
+cologne_outline <- sf::read_sf("../../data/VG250_KRS.shp") |>
+  dplyr::filter(GEN == "Köln") |>
   sf::st_transform(3035)
 
-tm_shape(bremen) +
+tm_shape(cologne_outline) +
   tm_polygons(col = "lightgrey") +
   tm_shape(hospitals_sf) +
   tm_dots(col = "#440154FF", size = 0.3) +
@@ -420,3 +292,155 @@ tm_shape(bremen) +
 ```
 :::
 
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 2
+
+```{r}
+library(sf)
+library(dplyr)
+library(tmap)
+
+# Voting precincts
+stimmbezirke <- sf::read_sf("../../data/Stimmbezirk.shp") |>
+  sf::st_set_crs(25832) |>
+  sf::st_transform(3035)
+
+stimmbezirk_centroids <- sf::st_centroid(stimmbezirke)
+
+# Point layer (hospitals from Exercise 1 — already in environment)
+hospitals_sf_3035 <- sf::st_transform(hospitals_sf, 3035)
+
+# Nearest feature index
+nearest_hospital <- sf::st_nearest_feature(stimmbezirk_centroids, hospitals_sf_3035)
+
+# Distance to nearest hospital
+stimmbezirke$dist_hospital_m <- as.numeric(
+  sf::st_distance(
+    stimmbezirk_centroids,
+    hospitals_sf_3035[nearest_hospital, ],
+    by_element = TRUE
+  )
+)
+
+# Map
+tm_shape(stimmbezirke) +
+  tm_polygons(
+    fill = "dist_hospital_m",
+    fill.legend = tm_legend(title = "Distance to nearest\nhospital (m)"),
+    fill.scale  = tm_scale_intervals(style = "quantile", n = 5, values = "viridis"),
+    col = NA
+  )
+```
+:::
+
+::: {.callout-tip collapse="true"}
+## `r emo::ji("white_check_mark")` Solution 3
+
+```{r}
+#| eval: false
+# Buffer hospitals
+hospital_buffers <- sf::st_buffer(hospitals_sf, dist = 1000)
+
+# Population raster (-9 = missing)
+inhabitants_cologne <- terra::rast("./data/inhabitants_cologne.tif") |>
+  terra::subst(from = -9, to = NA)
+
+# Match CRS to the raster
+stimmbezirke_r     <- sf::st_transform(stimmbezirke, terra::crs(inhabitants_cologne))
+hospital_buffers_r <- sf::st_transform(hospital_buffers, terra::crs(inhabitants_cologne))
+
+# Intersect Stimmbezirke with hospital buffers
+stimmbezirke_covered <- sf::st_intersection(stimmbezirke_r, hospital_buffers_r)
+
+# Total population per Stimmbezirk
+stimmbezirke_r$pop_total <- terra::extract(
+  inhabitants_cologne, stimmbezirke_r, fun = sum, na.rm = TRUE
+)[, 2]
+
+# Population within the covered part(s)
+stimmbezirke_covered$pop_covered <- terra::extract(
+  inhabitants_cologne, stimmbezirke_covered, fun = sum, na.rm = TRUE
+)[, 2]
+
+# Sum covered population per Stimmbezirk (in case it overlaps several buffers)
+pop_covered_by_district <- stimmbezirke_covered |>
+  sf::st_drop_geometry() |>
+  dplyr::summarise(pop_covered = sum(pop_covered), .by = nummer)
+
+# Share of population within 1000m of a hospital
+stimmbezirke <- stimmbezirke |>
+  dplyr::left_join(
+    stimmbezirke_r |> sf::st_drop_geometry() |> dplyr::select(nummer, pop_total),
+    by = "nummer"
+  ) |>
+  dplyr::left_join(pop_covered_by_district, by = "nummer") |>
+  dplyr::mutate(
+    pop_covered   = tidyr::replace_na(pop_covered, 0),
+    share_covered = pmin(pop_covered / pop_total * 100, 100)
+  )
+
+# Map
+tm_shape(stimmbezirke) +
+  tm_polygons(
+    fill = "share_covered",
+    fill.legend = tm_legend(title = "Share of population\nwithin 1000m of\na hospital (%)"),
+    fill.scale  = tm_scale_intervals(style = "quantile", n = 5, values = "viridis"),
+    col = NA
+  )
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+# Buffer hospitals
+hospital_buffers <- sf::st_buffer(hospitals_sf, dist = 1000)
+
+# Population raster (-9 = missing)
+inhabitants_cologne <- terra::rast("../../data/inhabitants_cologne.tif") |>
+  terra::subst(from = -9, to = NA)
+
+# Match CRS to the raster
+stimmbezirke_r     <- sf::st_transform(stimmbezirke, terra::crs(inhabitants_cologne))
+hospital_buffers_r <- sf::st_transform(hospital_buffers, terra::crs(inhabitants_cologne))
+
+# Intersect Stimmbezirke with hospital buffers
+stimmbezirke_covered <- sf::st_intersection(stimmbezirke_r, hospital_buffers_r)
+
+# Total population per Stimmbezirk
+stimmbezirke_r$pop_total <- terra::extract(
+  inhabitants_cologne, stimmbezirke_r, fun = sum, na.rm = TRUE
+)[, 2]
+
+# Population within the covered part(s)
+stimmbezirke_covered$pop_covered <- terra::extract(
+  inhabitants_cologne, stimmbezirke_covered, fun = sum, na.rm = TRUE
+)[, 2]
+
+# Sum covered population per Stimmbezirk (in case it overlaps several buffers)
+pop_covered_by_district <- stimmbezirke_covered |>
+  sf::st_drop_geometry() |>
+  dplyr::summarise(pop_covered = sum(pop_covered), .by = nummer)
+
+# Share of population within 1000m of a hospital
+stimmbezirke <- stimmbezirke |>
+  dplyr::left_join(
+    stimmbezirke_r |> sf::st_drop_geometry() |> dplyr::select(nummer, pop_total),
+    by = "nummer"
+  ) |>
+  dplyr::left_join(pop_covered_by_district, by = "nummer") |>
+  dplyr::mutate(
+    pop_covered   = tidyr::replace_na(pop_covered, 0),
+    share_covered = pmin(pop_covered / pop_total * 100, 100)
+  )
+
+# Map
+tm_shape(stimmbezirke) +
+  tm_polygons(
+    fill = "share_covered",
+    fill.legend = tm_legend(title = "Share of population\nwithin 1000m of\na hospital (%)"),
+    fill.scale  = tm_scale_intervals(style = "pretty", n = 5, values = "viridis"),
+    col = NA
+  )
+```
+:::
