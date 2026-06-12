@@ -55,7 +55,7 @@ This page comprises the official workshop repository with the most recent change
 ### Day 2
 [5 Spatial Alignment](https://denabel.github.io/BIGSSS_geo_2026/slides/5_Geocoding_Proximity_Spatial_Alignment.html)
 
-[6 Spatial Analysis](https://denabel.github.io/BIGSSS_geo_2026/slides/6_Spatial_Analysis.html)
+[6 Spatial Analysis](https://denabel.github.io/BIGSSS_geo_2026/slides/6_Spatial_Autocorrelation.html)
 
 [7 Spatial Econometrics & Outlook](https://denabel.github.io/BIGSSS_geo_2026/slides/7_Spatial_Econometrics_Outlook.html)
 
