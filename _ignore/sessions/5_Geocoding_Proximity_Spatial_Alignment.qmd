@@ -639,6 +639,42 @@ intersection |>
 ```
 :::
 
+## The intersection result
+
+```{r}
+#| echo: false
+#| fig-align: center
+ggplot2::ggplot() +
+  ggplot2::geom_sf(
+    data  = intersection,
+    ggplot2::aes(fill = zip_code),
+    color = "white",
+    linewidth = 0.1,
+    show.legend = FALSE
+  ) +
+  ggplot2::geom_sf(
+    data  = mun_nrw,
+    fill  = NA,
+    color = "#f98e09",
+    linewidth = 0.4
+  ) +
+  ggplot2::geom_sf(
+    data  = zip_sub,
+    fill  = NA,
+    color = "#bc3754",
+    linewidth = 0.4
+  ) +
+  ggplot2::labs(
+    title    = "Each piece = one ZIP × municipality overlap",
+    subtitle = glue::glue("{nrow(zip_sub)} ZIPs → {nrow(intersection)} intersection pieces")
+  ) +
+  ggplot2::theme_void(base_size = 14) +
+  ggplot2::theme(
+    plot.title    = ggplot2::element_text(face = "bold"),
+    plot.subtitle = ggplot2::element_text(color = "grey40")
+  )
+```
+
 
 ## The problem: which municipality does a survey respondent belong to?
 
@@ -725,10 +761,95 @@ head(areal_interpolation_matched |> sf::st_drop_geometry(), 4)
 :::
 
 ::: {.column width="50%"}
-![](../img/areal_interpolation.png){fig-align="center" sizr="30%"}
+![](../img/areal_interpolation.png){fig-align="center" size="50%"}
 
 :::
 :::::
+
+## Spatial Alignment: raster and vector
+
+::::: columns
+::: {.column width="50%"}
+```{r}
+#| results: hide
+#| message: false
+#| warning: false
+
+# load raster 
+pop_raster <- terra::rast("./data/census22_population.tif") |>
+  terra::subst(from = -9, to = NA)
+
+# verify / align CRS 
+zip_sub_projected <- zip_sub |>
+  sf::st_transform(terra::crs(pop_raster)) 
+
+# crop to extent of the zip_sub vector
+pop_raster_cropped <- pop_raster |>
+  terra::crop(terra::vect(zip_sub_projected))
+
+# area-weighted extraction
+zip_pop <- exactextractr::exact_extract(
+  x           = pop_raster_cropped,
+  y           = zip_sub_projected,
+  # population is a stock — sum, not mean
+  fun         = "sum",   
+  # area-weighted: accounts for partial cell coverage
+  weights     = "area", 
+  # carries zip_code through
+  append_cols = "zip_code"      
+) 
+
+```
+:::
+
+::: {.column width="50%"}
+![](../img/exactextract.svg){fig-align="center" width="56%"}
+:::
+::::
+
+## Spatial alignement: raster and data
+
+
+:::: {.columns}
+::: {.column width="50%"}
+```{r}
+#| eval: false
+
+zip_pop_sf <- zip_sub_projected |>
+  dplyr::left_join(zip_pop, by = "zip_code")
+
+ggplot2::ggplot(zip_pop_sf) +
+  ggplot2::aes(fill = sum) +
+  ggplot2::geom_sf(color = NA) +
+  ggplot2::scale_fill_viridis_c(
+    option    = "magma",
+    direction = -1,
+    name      = "Population"
+  ) +
+  ggplot2::theme_void()
+```
+:::
+
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+zip_pop_sf <- zip_sub_projected |>
+  dplyr::left_join(zip_pop, by = "zip_code")
+
+ggplot2::ggplot(zip_pop_sf) +
+  ggplot2::aes(fill = sum) +
+  ggplot2::geom_sf(color = NA) +
+  ggplot2::scale_fill_viridis_c(
+    option    = "magma",
+    direction = -1,
+    name      = "Population"
+  ) +
+  ggplot2::theme_void()
+```
+:::
+::::
+
 
 
 ## Going further
